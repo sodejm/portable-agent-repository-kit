@@ -1,6 +1,6 @@
 # PARK — Portable Agent Repository Kit
 
-[![CI](https://github.com/sodejm/portable-agent-repository-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/sodejm/portable-agent-repository-kit/actions/workflows/ci.yml)
+[![Repository contract](https://github.com/sodejm/portable-agent-repository-kit/actions/workflows/repository-contract.yml/badge.svg?branch=main)](https://github.com/sodejm/portable-agent-repository-kit/actions/workflows/repository-contract.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Use this template](https://img.shields.io/badge/use_this-template-2ea44f)](https://github.com/new?template_name=portable-agent-repository-kit&template_owner=sodejm)
 
