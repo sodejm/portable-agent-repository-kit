@@ -1,0 +1,39 @@
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python and generic tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# JavaScript and common build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Local agent/runtime state
+.codex/config.toml
+.claude/settings.local.json
+.agents/workboard.db*
+*.local.json
+
+# Temporary files
+.tmp/
+tmp/
+*.log

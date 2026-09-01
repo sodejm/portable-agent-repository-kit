@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: park-repository-contract
+        name: PARK repository contract
+        entry: python3 scripts/agent/check.py
+        language: system
+        pass_filenames: false
