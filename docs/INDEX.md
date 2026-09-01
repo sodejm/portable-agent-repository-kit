@@ -1,6 +1,7 @@
 # Documentation index
 
 - [Getting Started](GETTING_STARTED.md): create or configure a project.
+- [Repository Layout](REPOSITORY_LAYOUT.md): directory map, ownership, and project-generation lifecycle.
 - [Portability Architecture](PORTABILITY.md): canonical spine and adapters.
 - [Compatibility](COMPATIBILITY.md): environment-by-environment support boundary.
 - [Skills](SKILLS.md): authoring, synchronization, and global-skill selection.

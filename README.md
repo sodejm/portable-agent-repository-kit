@@ -84,8 +84,10 @@ durable practices—not copies of account-level plugins or project-specific rule
 
 ## Documentation
 
-Start with [Getting Started](docs/GETTING_STARTED.md) and the
-[Documentation Index](docs/INDEX.md). Maintainers should also read
+Start with [Getting Started](docs/GETTING_STARTED.md), then use the
+[Repository Layout](docs/REPOSITORY_LAYOUT.md) to understand what each directory
+owns and how generation works. The [Documentation Index](docs/INDEX.md) links the
+full guide set. Maintainers should also read
 [Portability Architecture](docs/PORTABILITY.md), [Skills](docs/SKILLS.md), and
 [Security Model](docs/SECURITY_MODEL.md).
 
