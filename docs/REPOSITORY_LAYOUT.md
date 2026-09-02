@@ -73,7 +73,7 @@ Both paths use the same rendering and validation logic:
 
 The resulting repository keeps the portable agent contract, skills, adapters,
 documentation, CI, and checks. It does not keep PARK's project generator, generator
-tests, license templates, or template marker.
+tests, license templates, template-only project-creator skill, or template marker.
 
 ## Runtime model
 
