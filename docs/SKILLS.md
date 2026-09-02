@@ -27,6 +27,8 @@ location. Do not edit generated copies.
 - `github-state-audit`: focused, read-only hosted-state inspection.
 - `repository-delivery-gate`: readiness without conflating delivery states.
 - `resumable-worktree-run`: isolated, recoverable issue-sized work.
+- `agent-workboard`: durable local coordination and reconciliation for bounded
+  parent/subagent or resumable work.
 - `gitignore-audit`: narrow evidence-based ignore recommendations.
 - `security-review`: generic defensive change review.
 - `documentation-impact`: documentation mapping and validation.
@@ -47,12 +49,12 @@ does not copy machine- or account-level automation.
 | --- | --- | --- |
 | GitHub state audit | included, rewritten | Generic, read-only, and portable |
 | Delivery gate | included, rewritten | Durable evidence and lifecycle discipline |
-| Resumable worktrees | included, simplified | Useful Git primitive; proprietary coordination removed |
+| Resumable worktrees | included, simplified | Useful Git primitive for isolated, recoverable work |
+| Agent workboard | included, rewritten | Portable SQLite state and explicit handoffs; optional hook support stays isolated in its helper |
 | `.gitignore` audit | included, simplified | Generic and safe |
 | GitHub workflow guard | principles in `AGENTS.md` and skills | Avoid standing remote-write authority in a public template |
 | GitHub authentication guard | excluded | Machine/account hook, not repository policy |
 | Model router and issue model recommender | excluded | Vendor catalog and account specific |
-| Agent workboard | excluded from baseline | Runtime-specific coordination and local database state |
 | Issue prioritizer | excluded | Optional live-service workflow, not every project's baseline |
 | Product/repository-specific skills | excluded | Not generic |
 | Installed plugin skills | excluded | Plugin licensing, versioning, and runtime remain external |

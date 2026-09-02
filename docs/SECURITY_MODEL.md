@@ -32,6 +32,8 @@ tokens and release systems.
 - canonical files are reviewable and protected with CODEOWNERS as the project grows;
 - initializer refuses non-empty targets and never deletes existing content;
 - adapters are generated and drift-checked;
+- workboard state stays outside the working tree, uses owner-only local permissions
+  where supported, and is limited to bounded coordination metadata;
 - hooks are optional while CI repeats invariants;
 - secrets remain outside Git and evidence is sanitized;
 - MCP tools use strict schemas and least privilege;

@@ -75,6 +75,11 @@ The resulting repository keeps the portable agent contract, skills, adapters,
 documentation, CI, and checks. It does not keep PARK's project generator, generator
 tests, license templates, template-only project-creator skill, or template marker.
 
+The included `agent-workboard` skill writes coordination state beside Git's common
+directory (or in a local agent-state directory outside Git for non-Git projects).
+It therefore shares state across linked worktrees without adding database files,
+handoffs, or agent progress to a project's history.
+
 ## Runtime model
 
 PARK does not run a resident service. An AI environment reads the instruction and

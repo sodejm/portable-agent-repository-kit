@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -42,6 +43,38 @@ class TemplateTests(unittest.TestCase):
             self.assertTrue((destination / "LICENSE").is_file())
             self.assertIn("# Example Service", (destination / "README.md").read_text(encoding="utf-8"))
             self.assertTrue((destination / ".claude/skills/.park-generated").is_file())
+            self.assertTrue(
+                (destination / ".agents/skills/agent-workboard/scripts/workboard.py").is_file()
+            )
+            self.assertTrue(
+                (destination / ".claude/skills/agent-workboard/scripts/workboard.py").is_file()
+            )
+            git_init = subprocess.run(
+                ["git", "init", "--quiet"],
+                cwd=destination,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(git_init.returncode, 0, git_init.stderr)
+            workboard = destination / ".agents/skills/agent-workboard/scripts/workboard.py"
+            initialized = subprocess.run(
+                [
+                    sys.executable,
+                    str(workboard),
+                    "--cwd",
+                    str(destination),
+                    "--json",
+                    "init",
+                ],
+                cwd=destination,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+            self.assertEqual(json.loads(initialized.stdout)["storage_kind"], "git")
+            self.assertTrue((destination / ".git/codex/workboard.sqlite3").is_file())
             self.assertFalse((destination / ".agents/skills/template-project-creator").exists())
             self.assertFalse((destination / ".claude/skills/template-project-creator").exists())
             check = subprocess.run(
