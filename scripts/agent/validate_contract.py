@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -22,6 +23,10 @@ PRIVATE_PATHS = (
     re.compile("/" + r"Users/[^/\s]+/"),
     re.compile("/" + r"home/[^/\s]+/"),
     re.compile(r"[A-Za-z]:\\" + r"Users\\[^\\\s]+\\"),
+)
+MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\((?P<target><[^>]+>|[^)\s]+)")
+MARKDOWN_REFERENCE = re.compile(
+    r"^\s{0,3}\[[^\]]+\]:\s*(?P<target><[^>]+>|\S+)"
 )
 
 
@@ -76,6 +81,47 @@ def validate_portability(errors: list[str]) -> None:
                 break
 
 
+def validate_markdown_links(errors: list[str]) -> None:
+    """Check repository-relative Markdown targets that GitHub will render."""
+    for path in sorted(ROOT.rglob("*.md")):
+        if ".git" in path.parts:
+            continue
+        relative = path.relative_to(ROOT)
+        # This source file is rendered at the generated repository root, where
+        # its relative targets resolve. The generated repository is separately
+        # validated by the test suite.
+        if relative == Path("templates/project/README.md"):
+            continue
+        in_fence = False
+        for line_number, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            if re.match(r"^\s*(```|~~~)", line):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
+            matches = list(MARKDOWN_LINK.finditer(line))
+            reference = MARKDOWN_REFERENCE.match(line)
+            if reference:
+                matches.append(reference)
+            for match in matches:
+                target = match.group("target").strip("<>")
+                parsed = urlsplit(target)
+                if (
+                    parsed.scheme
+                    or parsed.netloc
+                    or target.startswith(("#", "/"))
+                    or not parsed.path
+                ):
+                    continue
+                destination = (path.parent / unquote(parsed.path)).resolve()
+                if not destination.exists():
+                    errors.append(
+                        f"{relative}:{line_number}: Markdown target does not exist: {target}"
+                    )
+
+
 def main() -> int:
     errors: list[str] = []
     for relative in REQUIRED:
@@ -92,6 +138,7 @@ def main() -> int:
                 errors.append(f"template repository is missing generator path: {relative}")
     validate_skills(errors)
     validate_portability(errors)
+    validate_markdown_links(errors)
     if errors:
         for error in errors:
             print(f"error: {error}", file=sys.stderr)

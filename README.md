@@ -101,6 +101,14 @@ make check
 The implementation uses Python's standard library and Git. No package installation
 is required for the repository contract checks.
 
+## Community
+
+Use the [issue chooser](https://github.com/sodejm/portable-agent-repository-kit/issues/new/choose)
+to report a bug or propose a change. GitHub's `blob` pages show a read-only preview
+of each issue form; the issue chooser opens the interactive form. Please review
+[Contributing](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md), and the
+[Security Policy](SECURITY.md) before participating.
+
 ## License
 
 PARK is released under the [Apache License 2.0](LICENSE). Projects generated from

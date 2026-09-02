@@ -69,6 +69,26 @@ class TemplateTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse((destination / "LICENSE").exists())
 
+    def test_generated_repository_rejects_broken_markdown_links(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="park-test-") as temp:
+            destination = Path(temp) / "broken-docs-project"
+            result = self.create(destination)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            readme = destination / "README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8") + "\n[Missing guide](docs/MISSING.md)\n",
+                encoding="utf-8",
+            )
+            check = subprocess.run(
+                [sys.executable, "scripts/agent/validate_contract.py"],
+                cwd=destination,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(check.returncode, 1)
+            self.assertIn("Markdown target does not exist", check.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
