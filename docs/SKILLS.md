@@ -31,6 +31,13 @@ location. Do not edit generated copies.
 - `security-review`: generic defensive change review.
 - `documentation-impact`: documentation mapping and validation.
 
+## PARK-source workflow
+
+- `template-project-creator`: creates a new state-0 project from an
+  unconfigured PARK checkout with `scripts/create_project.py`. It is intentionally
+  removed during generation: a generated project has no project-generator script,
+  so retaining the skill there would advertise an unavailable workflow.
+
 ## Global-skill selection rationale
 
 PARK carries reusable ideas from a broader personal skill set but intentionally

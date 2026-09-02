@@ -165,6 +165,12 @@ def configure_project(
     replace_tokens(root, replacements)
     holder = copyright_holder or owner or name
     write_license(root, license_choice, holder)
+    # This workflow only works from the source PARK checkout. Generated projects
+    # deliberately remove the project generator, so do not leave a broken skill
+    # advertising that capability in their canonical skill collection.
+    template_creator_skill = root / ".agents" / "skills" / "template-project-creator"
+    if template_creator_skill.exists():
+        shutil.rmtree(template_creator_skill)
     synchronize_claude_skills(root)
     marker.unlink()
     # Generator assets are needed by PARK itself, not by a configured project.

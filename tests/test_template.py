@@ -42,6 +42,8 @@ class TemplateTests(unittest.TestCase):
             self.assertTrue((destination / "LICENSE").is_file())
             self.assertIn("# Example Service", (destination / "README.md").read_text(encoding="utf-8"))
             self.assertTrue((destination / ".claude/skills/.park-generated").is_file())
+            self.assertFalse((destination / ".agents/skills/template-project-creator").exists())
+            self.assertFalse((destination / ".claude/skills/template-project-creator").exists())
             check = subprocess.run(
                 [sys.executable, "scripts/agent/check.py"],
                 cwd=destination,

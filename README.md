@@ -79,8 +79,11 @@ project license.
 
 PARK includes focused skills for repository orientation, checks, GitHub state
 auditing, resumable worktrees, delivery readiness, security review,
-documentation impact, and `.gitignore` auditing. They are generic rewrites of
-durable practices—not copies of account-level plugins or project-specific rules.
+documentation impact, `.gitignore` auditing, and creating a new state-0 project
+from the source template. The project-creator skill is source-only; it is removed
+when a project is generated along with the generator itself. The reusable skills
+are generic rewrites of durable practices—not copies of account-level plugins or
+project-specific rules.
 
 ## Documentation
 
