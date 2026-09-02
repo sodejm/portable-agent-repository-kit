@@ -75,6 +75,33 @@ Update affected user, contributor, architecture, operations, and security docs i
 the same change. If no documentation changes are needed, record a brief rationale
 in the pull request or handoff.
 
+## Meaningful change standard
+
+Do not make churn-only edits.
+
+Avoid changing synonyms, wording, comments, variable names, formatting, or code
+structure unless the change materially improves correctness, safety, performance,
+accessibility, maintainability, clarity of domain meaning or behavior, consistency
+with an established project convention, testability, observability, operational
+support, or compliance with an explicit requirement, issue, review comment, or
+style rule.
+
+Before renaming a variable, function, type, file, or public API, verify that the
+new name resolves a real ambiguity, incorrect implication, collision, or
+domain-model mismatch. Do not rename merely because another synonym may sound
+preferable.
+
+Preserve stable terminology used by public APIs, schemas, documentation,
+configuration, tests, logs, and integrations unless a coordinated migration is
+explicitly required.
+
+For proposed wording-only or naming-only changes, state the concrete ambiguity or
+misunderstanding being removed. If none can be identified, leave the existing
+wording unchanged.
+
+Prefer focused diffs. Do not bundle cleanup, rewording, or stylistic normalization
+into behavior-changing work unless explicitly requested.
+
 ## Nested contracts
 
 Add a nested `AGENTS.md` only when a subtree genuinely needs additional commands or
