@@ -35,3 +35,8 @@ evolves.
 
 See [SECURITY.md](SECURITY.md) for reporting guidance and
 [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md) for the baseline agent threat model.
+
+## Milestone development workflow
+
+Use the [reusable goal prompt](prompts/next-milestone.md) and
+[usage guide](prompts/README.md) for an orchestrated milestone run.

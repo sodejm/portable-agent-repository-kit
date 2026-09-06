@@ -116,3 +116,9 @@ of each issue form; the issue chooser opens the interactive form. Please review
 
 PARK is released under the [Apache License 2.0](LICENSE). Projects generated from
 PARK choose their own license explicitly.
+
+## Milestone development workflow
+
+Use the [reusable goal prompt](prompts/next-milestone.md) to run a bounded
+milestone with an orchestrating agent. The [usage guide](prompts/README.md) covers
+the shared skill, task-specific model routing, decision summaries, and safe storage.

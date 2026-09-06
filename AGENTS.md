@@ -106,3 +106,12 @@ into behavior-changing work unless explicitly requested.
 
 Add a nested `AGENTS.md` only when a subtree genuinely needs additional commands or
 constraints. Keep it short and do not repeat this file.
+
+## Milestone goal workflow
+
+For an authorized request to work through a milestone or release, use the
+[milestone-delivery skill](.agents/skills/milestone-delivery/SKILL.md). Start with
+[prompts/next-milestone.md](prompts/next-milestone.md); see the
+[usage guide](prompts/README.md) for scope, orchestration, model routing, and safe
+storage. The main goal agent owns integration and verified delivery. These files
+do not start a run or grant external-action authority by their presence alone.
