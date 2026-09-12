@@ -79,8 +79,12 @@ project license.
 
 PARK includes focused skills for repository orientation, checks, GitHub state
 auditing, resumable worktrees, durable parent/subagent workboards, delivery
-readiness, security review, documentation impact, `.gitignore` auditing, and
-creating a new state-0 project from the source template. The project-creator skill
+readiness, security review, documentation impact, `.gitignore` auditing, local
+code-churn analysis, and creating a new state-0 project from the source template.
+Churn audits work from Git in any agent environment, with optional local Codex
+session evidence for recorded edits and tokens. They suggest improvements to
+existing contracts and planning using explicit repository inputs and local
+reports. The project-creator skill
 is source-only; it is removed when a project is generated along with the generator
 itself. The reusable skills are generic rewrites of durable practices—not copies of
 account-level plugins or project-specific rules.

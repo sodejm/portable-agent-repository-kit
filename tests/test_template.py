@@ -10,9 +10,35 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CREATE = ROOT / "scripts" / "create_project.py"
+sys.path.insert(0, str(ROOT / "scripts"))
+from _template_common import copy_template, synchronize_claude_skills
 
 
 class TemplateTests(unittest.TestCase):
+    def test_distribution_excludes_private_configuration_and_audit_reports(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="park-privacy-") as temp:
+            source, destination = Path(temp) / "source", Path(temp) / "copy"
+            skill = source / ".agents/skills/example-audit"
+            (skill / "config").mkdir(parents=True)
+            public = skill / "config/churn.example.json"
+            public.write_text('{"repositories": []}\n', encoding="utf-8")
+            private_paths = [
+                source / "churn-v1-example.json", source / "settings.local.json",
+                skill / "config/churn.local.json", skill / "churn-v1-example.md",
+            ]
+            for path in private_paths:
+                path.write_text("synthetic private sentinel\n", encoding="utf-8")
+            synchronize_claude_skills(source)
+            copy_template(source, destination)
+            self.assertTrue((destination / public.relative_to(source)).is_file())
+            for root in (source / ".claude/skills/example-audit", destination / ".claude/skills/example-audit"):
+                self.assertTrue((root / "config/churn.example.json").is_file())
+                self.assertFalse((root / "config/churn.local.json").exists())
+                self.assertFalse((root / "churn-v1-example.md").exists())
+            for path in private_paths:
+                self.assertFalse((destination / path.relative_to(source)).exists())
+                self.assertEqual(path.read_text(encoding="utf-8"), "synthetic private sentinel\n")
+
     def create(self, destination: Path, license_choice: str = "mit") -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [

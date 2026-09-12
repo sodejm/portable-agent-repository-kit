@@ -11,6 +11,9 @@ from pathlib import Path
 
 TEMPLATE_MARKER = ".portable-agent-template"
 SKIP_NAMES = {".git", "LICENSE", "__pycache__", ".DS_Store"}
+DISTRIBUTION_IGNORE = shutil.ignore_patterns(
+    "__pycache__", "*.pyc", ".DS_Store", "*.local.json", "churn-v*.json", "churn-v*.md"
+)
 LICENSE_CHOICES = ("mit", "apache-2.0", "none")
 
 
@@ -37,15 +40,16 @@ def copy_template(source: Path, destination: Path) -> None:
 
     ensure_empty_destination(destination)
     destination.mkdir(parents=True, exist_ok=True)
+    excluded = DISTRIBUTION_IGNORE(str(source), [item.name for item in source.iterdir()])
     for item in source.iterdir():
-        if item.name in SKIP_NAMES:
+        if item.name in SKIP_NAMES or item.name in excluded:
             continue
         target = destination / item.name
         if item.is_dir():
             shutil.copytree(
                 item,
                 target,
-                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store"),
+                ignore=DISTRIBUTION_IGNORE,
             )
         else:
             shutil.copy2(item, target)
@@ -120,7 +124,7 @@ def synchronize_claude_skills(root: Path) -> None:
             shutil.copytree(
                 skill,
                 target / skill.name,
-                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store"),
+                ignore=DISTRIBUTION_IGNORE,
             )
 
 

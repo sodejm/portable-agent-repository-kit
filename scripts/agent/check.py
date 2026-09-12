@@ -41,6 +41,8 @@ def main() -> int:
     ]
     if (ROOT / "tests").is_dir():
         checks.append(run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"]))
+    for suite in sorted((ROOT / ".agents" / "skills").glob("*/tests")):
+        checks.append(run([sys.executable, "-m", "unittest", "discover", "-s", str(suite), "-v"]))
     if (ROOT / ".git").exists():
         checks.append(run(["git", "diff", "--check"]))
     if all(checks):
