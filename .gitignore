@@ -32,6 +32,8 @@ coverage/
 .claude/settings.local.json
 .agents/workboard.db*
 *.local.json
+churn-v*.json
+churn-v*.md
 
 # Temporary files
 .tmp/

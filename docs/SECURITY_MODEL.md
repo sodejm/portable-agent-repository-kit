@@ -40,6 +40,29 @@ tokens and release systems.
 - validation and delivery states are reported precisely;
 - dependency, action, and plugin provenance is reviewed before adoption.
 
+## Local audit data
+
+The `session-usage-audit` helpers treat Git and session content as untrusted
+evidence. They statically parse supported edits without evaluating transcript
+code or running recorded commands. Audits are read-only against source
+repositories and sessions, and require no network service or model calls.
+Git-only mode does not discover or read session files.
+
+Reports exclude raw code, patch bodies, commands, prompts, and transcript bodies.
+They still include local paths, repository and task identifiers, and usage
+metadata. Keep them and local configuration private. New report files use
+owner-only permissions on POSIX systems; stdout and caller-managed redirection
+follow the caller's permissions. Audited worktrees, shared Git directories, and
+the configured Codex session trees cannot be report destinations. When selecting
+individual session files with `--path`, keep reports outside their source
+directories as well.
+
+The distributed skill has an empty repository configuration and synthetic tests.
+PARK ignores `*.local.json`, `churn-v*.json`, and `churn-v*.md` in Git and excludes
+them from generated project and skill copies. These filename rules are accidental
+disclosure guards, not content sanitizers: renamed reports, excerpts, and other
+exports still require review before sharing.
+
 ## Residual risk
 
 PARK cannot control a client's hidden system instructions, model behavior, sandbox,
