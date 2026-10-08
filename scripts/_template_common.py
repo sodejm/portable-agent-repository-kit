@@ -157,6 +157,16 @@ def configure_project(
         raise TemplateError(f"project README template is missing: {project_readme}")
     (root / "README.md").write_text(project_readme.read_text(encoding="utf-8"), encoding="utf-8")
 
+    # A generated project must not inherit PARK's architecture or review claims.
+    for template_name, destination_name in (
+        ("THREAT_MODEL.md", "docs/THREAT_MODEL.md"),
+        ("REVIEW_COVERAGE.md", "docs/security/REVIEW_COVERAGE.md"),
+    ):
+        source = root / "templates" / "project" / template_name
+        destination = root / destination_name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+
     repository = f"{owner}/{project_slug}" if owner else project_slug
     replacements = {
         "{{PROJECT_NAME}}": name,
