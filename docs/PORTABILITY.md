@@ -42,3 +42,7 @@ PARK checks generated Claude skill copies for drift.
 - model selection, subagent behavior, and proprietary orchestration.
 
 PARK documents these boundaries rather than pretending they do not exist.
+
+## Local validation boundary
+
+The [local pre-push gate](LOCAL_PUSH_GATE.md) executes exact committed snapshots, adds scanner and dependency access, and pins reviewed policy outside the worktree. It is not an OS sandbox or a server enforcement boundary; CI and review remain required. No production runtime or deployed resource is changed by installation.

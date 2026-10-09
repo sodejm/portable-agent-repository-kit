@@ -126,3 +126,7 @@ PARK choose their own license explicitly.
 Use the [reusable goal prompt](prompts/next-milestone.md) to run a bounded
 milestone with an orchestrating agent. The [usage guide](prompts/README.md) covers
 the shared skill, task-specific model routing, decision summaries, and safe storage.
+
+## Local pre-push validation
+
+See [installation, prerequisites, security boundaries and recovery](docs/LOCAL_PUSH_GATE.md). CI remains required.

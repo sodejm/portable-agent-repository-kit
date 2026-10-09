@@ -69,3 +69,7 @@ PARK cannot control a client's hidden system instructions, model behavior, sandb
 account permissions, context truncation, or support for a standard. Human review,
 branch protection, CI, environment isolation, and least-privileged credentials
 remain necessary.
+
+## Local validation boundary
+
+The [local pre-push gate](LOCAL_PUSH_GATE.md) executes exact committed snapshots, adds scanner and dependency access, and pins reviewed policy outside the worktree. It is not an OS sandbox or a server enforcement boundary; CI and review remain required. No production runtime or deployed resource is changed by installation.
