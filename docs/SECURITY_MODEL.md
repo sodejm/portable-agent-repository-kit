@@ -69,3 +69,12 @@ PARK cannot control a client's hidden system instructions, model behavior, sandb
 account permissions, context truncation, or support for a standard. Human review,
 branch protection, CI, environment isolation, and least-privileged credentials
 remain necessary.
+
+## Detailed model and review obligations
+
+Use the [project threat model](THREAT_MODEL.md) for component-specific boundaries,
+implemented-control evidence, proposed mitigations and unresolved risks. Do not
+apply an offline-component claim to a live integration. Follow
+[Engineering review policy](ENGINEERING_REVIEW.md) and
+[Review coverage](security/REVIEW_COVERAGE.md) for independent human approval,
+retroactive review and maintenance.

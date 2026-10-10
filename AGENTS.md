@@ -42,8 +42,9 @@ one or when authorization for a consequential action is unclear.
 
 - Use an issue-sized branch or worktree for tracked work when the project workflow
   calls for one.
-- Do not commit, push, open or merge a pull request, publish, deploy, or mutate a
-  hosted service unless the user or project workflow authorizes that transition.
+- Local checkpoint commits for authorized work are required under the policy below.
+- Do not push, open or merge a pull request, publish, deploy, or mutate a hosted
+  service unless the user or project workflow authorizes that transition.
 - Never push directly to the default branch unless explicitly authorized.
 - Do not describe work as shipped merely because it was committed or pushed.
 
@@ -115,3 +116,21 @@ For an authorized request to work through a milestone or release, use the
 [usage guide](prompts/README.md) for scope, orchestration, model routing, and safe
 storage. The main goal agent owns integration and verified delivery. These files
 do not start a run or grant external-action authority by their presence alone.
+
+## Required checkpoints, human review, and threat modeling
+
+- Follow [Engineering review policy](docs/ENGINEERING_REVIEW.md). Create a local
+  commit after each substantial coherent change and its relevant validation; do
+  not defer all checkpoints until task completion. Use operational, imperative
+  commit messages with actual validation and recovery details. Preserve unrelated
+  work, existing checkpoints, signing requirements and stronger project gates.
+- Update affected documentation in the same change. Require independent human
+  review of the exact commit before merge/release; automated review is additional
+  evidence. Record and schedule retroactive review of existing code in
+  [Review coverage](docs/security/REVIEW_COVERAGE.md); do not mark pending code reviewed.
+- Maintain the detailed [Threat model](docs/THREAT_MODEL.md) when code, dependencies,
+  data flows, trust boundaries or deployment assumptions change. Record a specific
+  no-impact rationale when unchanged. Reconcile at every release and quarterly.
+  Keep source evidence, implemented/proposed controls, abuse cases, risk owners,
+  validation and unresolved assumptions current. Human approval remains pending
+  until an independent reviewer records it.
