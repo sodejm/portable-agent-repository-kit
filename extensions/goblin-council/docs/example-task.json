@@ -1,0 +1,27 @@
+{
+  "objective": "Allow zero retries while rejecting negative retry counts.",
+  "scope": [
+    "src/retry.py",
+    "tests/test_retry.py"
+  ],
+  "acceptance": [
+    "Zero retries performs exactly one attempt.",
+    "Negative retry counts raise ValueError.",
+    "Existing positive retry behavior stays compatible."
+  ],
+  "depth": 2,
+  "blast": 1,
+  "ambiguity": 0,
+  "risk": 1,
+  "routing_basis": "Bounded local retry arithmetic across implementation and tests, without shared-state changes.",
+  "validation": [
+    [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests"
+    ]
+  ]
+}

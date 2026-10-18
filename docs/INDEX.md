@@ -13,3 +13,6 @@
 - [Maintenance](MAINTENANCE.md): upgrades and contract evolution.
 - [Licensing](LICENSING.md): explicit project-license selection.
 - [Decision records](decisions/README.md): durable architectural decisions.
+
+- [Goblin Council](../extensions/goblin-council/README.md): optional Codex orchestration, supported models, setup, and recovery.
+- [Local push gate](LOCAL_PUSH_GATE.md): optional exact-commit validation, prerequisites, and policy reconciliation.

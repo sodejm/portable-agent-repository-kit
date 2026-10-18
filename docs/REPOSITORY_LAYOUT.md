@@ -117,3 +117,10 @@ After generation, maintainers normally update:
 
 See [Customization](CUSTOMIZATION.md) for the safe extension rules and
 [Portability Architecture](PORTABILITY.md) for the standards rationale.
+
+## Optional extensions
+
+`extensions/goblin-council/` contains an inactive Codex-specific package, its
+installer, role templates, skills, tests, and guides. Project generation copies
+the package but does not register its skills or mirror them into Claude adapters.
+See its [setup guide](../extensions/goblin-council/docs/setup.md).

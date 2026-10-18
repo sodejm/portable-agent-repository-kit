@@ -29,6 +29,7 @@ coverage/
 
 # Local agent/runtime state
 .codex/config.toml
+!extensions/goblin-council/.codex/config.toml
 .claude/settings.local.json
 .agents/workboard.db*
 *.local.json

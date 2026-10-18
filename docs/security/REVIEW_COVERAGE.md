@@ -21,3 +21,12 @@ review trigger. Record third-party provenance and review separately. Changed
 behavior invalidates prior scope approval. Follow the
 [engineering review policy](../ENGINEERING_REVIEW.md). No automated result or
 threat-model entry closes this human-review backlog.
+
+## Goblin Council contribution
+
+Pending independent human review: `extensions/goblin-council/**`,
+`scripts/agent/check.py`, `tests/test_template.py`, and related documentation.
+Review installer ownership checks, model routes, sandbox probes, snapshot and
+promotion logic, recovery, and generated-project isolation at the exact proposed
+commit. Owner: maintainer assignment pending; deadline: before affected release.
+Local automated checks do not close this review.

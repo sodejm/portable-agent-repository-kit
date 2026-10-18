@@ -24,3 +24,10 @@ For each supported environment, verify that a fresh session can:
 5. report local and hosted evidence as distinct states.
 
 Record version-specific exceptions in the project, not in global machine policy.
+
+## Goblin Council exception
+
+The optional [Goblin Council extension](../extensions/goblin-council/README.md)
+is designed for Codex only. It requires Python 3.11+, Git, and supported Unix
+Codex sandbox controls; Windows and other agent runtimes are unsupported. Its
+model table describes implemented routes, not universal account availability.

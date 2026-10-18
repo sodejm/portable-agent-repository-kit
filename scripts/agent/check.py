@@ -43,6 +43,12 @@ def main() -> int:
         checks.append(run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"]))
     for suite in sorted((ROOT / ".agents" / "skills").glob("*/tests")):
         checks.append(run([sys.executable, "-m", "unittest", "discover", "-s", str(suite), "-v"]))
+    council = ROOT / "extensions/goblin-council/tests"
+    if council.is_dir():
+        if sys.platform == "win32" or sys.version_info < (3, 11):
+            print("SKIP Goblin Council: optional extension requires Unix and Python 3.11+.")
+        else:
+            checks.append(run([sys.executable, "-m", "unittest", "discover", "-s", str(council), "-v"]))
     if (ROOT / ".git").exists():
         checks.append(run(["git", "diff", "--check"]))
     if all(checks):

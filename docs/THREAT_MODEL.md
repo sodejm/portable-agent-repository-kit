@@ -188,3 +188,43 @@ checkpoint commits and exact-revision approval, and
 [Review coverage](security/REVIEW_COVERAGE.md) for the outstanding retroactive
 inventory. Human reviewer/date/accepted revision: **pending**. No residual risk is
 accepted by this initial document.
+
+## Optional Goblin Council boundary (2026-10-18)
+
+Scope: `extensions/goblin-council/**` and its integration in PARK validation and
+project generation. Assets include the primary HEAD/index/files, candidate
+patches, local Codex configuration, model credentials, and private run journals.
+The operator installs trusted skills; untrusted task/code/model output enters
+separate CLI writer and reviewer sessions; a local coordinator owns promotion.
+The installer only registers owned symlinks and refuses collisions. Generation
+carries the package without activating it or extending other vendors’ adapters.
+
+- **G01, P1, high impact / medium likelihood:** discarded drafts or malicious
+  candidate instructions mutate the primary checkout. Private-index snapshots,
+  separate writer/reviewer sandboxes and native negative write probes constrain
+  mutations. Tests exercise dirty tracked/untracked/index preservation and
+  rejection. Native enforcement must also be verified on each supported host.
+- **G02, P1, high impact / medium likelihood:** stale reviews or concurrent edits
+  cause unreviewed promotion. Candidate-bound reports, immutable review trees,
+  isolated validation, binary patch integrity, and primary fingerprints gate
+  promotion. Tests cover stale reports, tampering and concurrent primary edits.
+  The cooperative lock cannot prevent a human editor racing a multi-file apply;
+  interrupted promotion requires inspection, never automatic destructive reset.
+- **G03, P1, high impact / medium likelihood:** model/tool access exposes private
+  data or widens authority. Stage tools disable network, MCP, plugins and nested
+  delegation; model requests still send task/code context to the configured
+  provider. Read-only is not a confidentiality boundary. Trusted host hooks and
+  user policy remain authoritative. Journals contain private code and must not
+  be published. Provider/account access is separate from deterministic tests.
+- **G04, P2, medium impact / low likelihood:** installer overwrite or broad cleanup
+  destroys another installation/run. All links are preflighted for ownership;
+  cleanup is run-specific, and interrupted promotion cannot be abandoned. Tests
+  cover collision refusal, idempotence and partial install rollback. Installation
+  assumes a trusted destination without hostile concurrent filesystem mutation.
+
+Evidence: extension tests, native opt-in probe, and
+[verification guide](../extensions/goblin-council/docs/verification.md). The
+implementation originated in the maintainer’s standalone Goblin Council package;
+no model SDK or third-party proxy is bundled. Human owner: maintainer/security
+reviewer assignment pending. Validate P1 controls before affected release;
+residual risk acceptance and exact-revision human review remain pending.
