@@ -46,3 +46,48 @@ On macOS with Python 3.14, the extension suite passed 25 deterministic tests
 passed outside the enclosing agent sandbox; inside it, macOS denied creation of
 the nested sandbox. No paid model stages were exercised for this import.
 These results do not establish Linux compatibility or real-model task quality.
+
+## Live validation follow-up (2026-10-18)
+
+Implementation revision: `a53ffdcb7745b14e015b4cec95356f13de38f19b`.
+Host: macOS, Python 3.14, native Codex CLI `0.163.0-alpha.10.2`.
+`make check` passed, and the opt-in native command above passed all 26 tests
+without skips when run outside the enclosing agent sandbox. PR #11's Repository
+contract CI also passed at this revision.
+
+The smoke fixture used disposable repositories containing `attempts(retries)`.
+Acceptance required `0 -> 1`, `3 -> 4`, and `ValueError` for negative retries.
+Each repository also contained distinct staged and unstaged versions of a notes
+file and an untracked file. The harness compared real index bytes and those file
+contents after execution, and reran the acceptance command in the primary tree.
+Scores were deliberately selected to exercise routes; this arithmetic fixture
+does not represent a complex architecture or security workload.
+
+| Route | Scores (depth, blast, ambiguity, risk) | Native stages | Result |
+| --- | --- | --- | --- |
+| Standard Single | 0, 0, 0, 0 | None; direct primary-thread edit | Acceptance passed; user edits preserved |
+| Standard Cascade | 1, 1, 1, 1 | Luna medium draft, Terra medium judge | PASS; validated candidate promoted; user edits preserved |
+| Standard Cascade | 2, 1, 0, 1 | Terra medium draft, Terra medium judge | PASS; validated candidate promoted; user edits preserved |
+| Standard Cascade with injected defect | 1, 1, 1, 1 | Luna medium draft, Terra medium judge, Sol high repair and final judge | ESCALATE, one repair, PASS, promotion; user edits preserved |
+| Max Critique | 2, 1, 0, 1 | Terra high draft, parallel Sol high architecture/security critics, Sol high synthesis and final judge | Both critics PASS, one synthesis, final PASS, promotion; user edits preserved |
+
+Model names in this table abbreviate `gpt-5.6-luna`, `gpt-5.6-terra`, and
+`gpt-5.6-sol`. No model substitution was used. The harness called the coordinator's
+native pipeline directly; deterministic tests separately exercise CLI dispatch.
+Single used the current primary thread, so it is not an additional model-access
+test. Native stage traces recorded effective sandbox probes, model/effort,
+candidate-bound validation and review, and promotion.
+
+The rejection test deliberately restored the original defective function after a
+real Luna draft. Validation failed and the real Terra judge returned `ESCALATE`;
+Sol repaired the candidate, validation passed, and the final Sol judge returned
+`PASS`. This demonstrates fault-injected recovery, not a spontaneous drafting
+failure. The max-mode critic intervals overlapped (approximately 35 and 24
+seconds); both reviewed the same frozen candidate before one synthesized revision
+and final candidate-bound validation/judging.
+
+These are bounded integration smoke results, not a broad model-quality benchmark
+or independent security approval. Linux native validation remains outstanding.
+The PR must remain draft pending independent human security review of the exact
+revision. This evidence-only follow-up changes no code, dependencies, data flows,
+or trust boundaries; the existing threat model remains applicable.
