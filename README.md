@@ -126,3 +126,11 @@ PARK choose their own license explicitly.
 Use the [reusable goal prompt](prompts/next-milestone.md) to run a bounded
 milestone with an orchestrating agent. The [usage guide](prompts/README.md) covers
 the shared skill, task-specific model routing, decision summaries, and safe storage.
+
+## Optional Codex extension
+
+[Goblin Council](extensions/goblin-council/README.md) adds Single, Cascade, and
+parallel Critique workflows for Codex. Its current routes use GPT-5.6 Luna, Terra,
+and Sol; availability is checked locally before launch. It is inactive by default
+and does not change PARK’s vendor-neutral contract. Follow the
+[setup guide](extensions/goblin-council/docs/setup.md) to install it.

@@ -1,0 +1,20 @@
+# Merge these settings into an existing repository config; never replace it.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+
+# Stage sessions disable agents.enabled, so logical delegation depth is one.
+# max_threads is a legacy alias; max_depth is not a supported setting here.
+# Goblin Council itself caps independent reviewer sessions at two.
+
+# Optional, inactive example for a DIRECT Responses-compatible provider.
+# Native agent profiles inherit the provider. The coordinator currently pins
+# OpenAI; enabling another provider requires an explicit route/catalog update.
+# [model_providers.council_alternate]
+# name = "Approved Responses provider"
+# base_url = "https://your-approved-provider.example/v1"
+# env_key = "COUNCIL_PROVIDER_API_KEY"
+# wire_api = "responses"
+# In the provider's separately selected CLI config/profile, set:
+# model_provider = "council_alternate"
+# model = "provider-confirmed-model-id"
