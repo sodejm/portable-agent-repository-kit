@@ -119,7 +119,7 @@ class RemoteTests(unittest.TestCase):
         (self.repo / "committed-only.py").write_text("VALUE = 1\n")
         policy = {
             "default_branch": "main",
-            "tools": {"semgrep": "1.179.0", "trivy": "0.75.0"},
+            "tools": {"semgrep": "1.181.0", "trivy": "0.76.0"},
             "test_areas": [
                 {
                     "name": "application",
@@ -143,7 +143,7 @@ class RemoteTests(unittest.TestCase):
 import json,pathlib,sys
 name=pathlib.Path(sys.argv[0]).name
 if '--version' in sys.argv:
- print('1.179.0' if name=='semgrep' else 'Version: 0.75.0');sys.exit(0)
+ print('1.181.0' if name=='semgrep' else 'Version: 0.76.0');sys.exit(0)
 assert not pathlib.Path('private-untracked.txt').exists()
 assert pathlib.Path('committed-only.py').exists()
 report=pathlib.Path(sys.argv[sys.argv.index('--output')+1])
