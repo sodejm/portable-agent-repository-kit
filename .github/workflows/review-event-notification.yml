@@ -1,0 +1,16 @@
+name: Review event notification
+
+on:
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify the trusted review gate
+        run: >-
+          echo "Review state changed; the default-branch owner-review gate will
+          re-read live review state."

@@ -58,6 +58,12 @@ it once, review the diff, then commit.
 5. Configure branch protection, secret scanning, dependency review, and private
    vulnerability reporting in GitHub.
 6. Add architecture and threat-model detail before the project handles real data.
+7. Explicitly configure `.github/review-policy.json` for the new repository before
+   requiring `Owner review gate`. Generated projects intentionally start with no
+   owner exception or designated reviewer and therefore fail closed. Adopt a
+   project-specific review policy; do not copy PARK's `sodejm` identities by
+   default. Then adapt the [activation runbook](OWNER_REVIEW_POLICY.md) to the
+   project's chosen policy.
 
 ## Validate
 

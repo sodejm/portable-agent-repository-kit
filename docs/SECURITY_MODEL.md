@@ -35,6 +35,8 @@ tokens and release systems.
 - workboard state stays outside the working tree, uses owner-only local permissions
   where supported, and is limited to bounded coordination metadata;
 - hooks are optional while CI repeats invariants;
+- the trusted default-branch owner-review gate re-reads live PR, account,
+  permission, and paginated review state and binds its result to the head SHA;
 - secrets remain outside Git and evidence is sanitized;
 - MCP tools use strict schemas and least privilege;
 - validation and delivery states are reported precisely;
@@ -66,9 +68,11 @@ exports still require review before sharing.
 ## Residual risk
 
 PARK cannot control a client's hidden system instructions, model behavior, sandbox,
-account permissions, context truncation, or support for a standard. Human review,
-branch protection, CI, environment isolation, and least-privileged credentials
-remain necessary.
+account permissions, context truncation, or support for a standard. Owner review
+does not prove manual inspection. Branch protection, CI, environment isolation,
+least-privileged credentials, and qualified human review where required remain
+necessary. See the [owner-review policy](OWNER_REVIEW_POLICY.md) for check-source
+spoofing and review-event race limits.
 
 ## Detailed model and review obligations
 
@@ -76,5 +80,5 @@ Use the [project threat model](THREAT_MODEL.md) for component-specific boundarie
 implemented-control evidence, proposed mitigations and unresolved risks. Do not
 apply an offline-component claim to a live integration. Follow
 [Engineering review policy](ENGINEERING_REVIEW.md) and
-[Review coverage](security/REVIEW_COVERAGE.md) for independent human approval,
+[Review coverage](security/REVIEW_COVERAGE.md) for conditional human approval,
 retroactive review and maintenance.

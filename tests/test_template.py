@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -40,10 +41,31 @@ class TemplateTests(unittest.TestCase):
                 self.assertEqual(path.read_text(encoding="utf-8"), "synthetic private sentinel\n")
 
     def create(self, destination: Path, license_choice: str = "mit") -> subprocess.CompletedProcess[str]:
+        create_script = CREATE
+        try:
+            destination.resolve().relative_to(ROOT.resolve())
+        except ValueError:
+            pass
+        else:
+            # This repository intentionally refuses to generate a project inside its
+            # own source tree. Some restricted runners place TMPDIR inside the checkout,
+            # so exercise the same invariant from an isolated template copy.
+            isolated_source = destination.parent / "template-source"
+            shutil.copytree(
+                ROOT,
+                isolated_source,
+                ignore=shutil.ignore_patterns(
+                    ".git",
+                    destination.parent.name,
+                    "__pycache__",
+                    "*.pyc",
+                ),
+            )
+            create_script = isolated_source / "scripts" / "create_project.py"
         return subprocess.run(
             [
                 sys.executable,
-                str(CREATE),
+                str(create_script),
                 str(destination),
                 "--name",
                 "Example Service",
@@ -79,6 +101,22 @@ class TemplateTests(unittest.TestCase):
             self.assertIn("# Example Service existing-code human review coverage", coverage)
             self.assertIn("No human review", coverage)
             self.assertNotIn("bfc41923fb497b495e95dc7dee644313b51b368b", coverage)
+            review_policy = json.loads(
+                (destination / ".github/review-policy.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(review_policy["repository"], "example-owner/example-service")
+            self.assertIsNone(review_policy["owner_review"])
+            self.assertIsNone(review_policy["required_reviewer"])
+            self.assertNotIn(
+                "sodejm",
+                json.dumps(review_policy),
+                "generated projects must not inherit PARK's owner exception",
+            )
+            generated_review_docs = (
+                destination / "docs/OWNER_REVIEW_POLICY.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("no configured owner exception", generated_review_docs)
+            self.assertNotIn("sodejm", generated_review_docs)
             self.assertTrue((destination / "LICENSE").is_file())
             self.assertIn("# Example Service", (destination / "README.md").read_text(encoding="utf-8"))
             self.assertTrue((destination / ".claude/skills/.park-generated").is_file())

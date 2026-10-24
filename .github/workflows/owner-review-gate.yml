@@ -1,0 +1,32 @@
+name: Owner review gate
+
+on:
+  workflow_run:
+    workflows: ["Repository contract", "Review event notification"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to re-evaluate
+        required: true
+        type: number
+
+permissions:
+  actions: read
+  checks: write
+  contents: read
+  pull-requests: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted default-branch gate
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Evaluate live review policy and emit exact-head check
+        env:
+          REVIEW_GATE_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/review_gate.py

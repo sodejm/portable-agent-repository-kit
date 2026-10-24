@@ -8,6 +8,7 @@
 - [Hooks](HOOKS.md): safe optional automation.
 - [MCP](MCP.md): portable tool-server strategy and client configuration.
 - [Security Model](SECURITY_MODEL.md): assets, threats, controls, and limits.
+- [Owner-review Policy](OWNER_REVIEW_POLICY.md): conditional review gate, GitHub activation, limits, and recovery.
 - [Delivery Evidence](DELIVERY_EVIDENCE.md): precise validation and status claims.
 - [Customization](CUSTOMIZATION.md): adapting PARK without creating drift.
 - [Maintenance](MAINTENANCE.md): upgrades and contract evolution.

@@ -96,7 +96,8 @@ Start with [Getting Started](docs/GETTING_STARTED.md), then use the
 owns and how generation works. The [Documentation Index](docs/INDEX.md) links the
 full guide set. Maintainers should also read
 [Portability Architecture](docs/PORTABILITY.md), [Skills](docs/SKILLS.md), and
-[Security Model](docs/SECURITY_MODEL.md).
+[Security Model](docs/SECURITY_MODEL.md). PARK maintainers must also follow the
+[owner-review policy and activation runbook](docs/OWNER_REVIEW_POLICY.md).
 
 ## Validate PARK
 

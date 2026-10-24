@@ -15,6 +15,14 @@
 - [ ] `make check` passed, or the blocker is explained.
 - [ ] Hosted CI state was checked when relevant.
 
+## Owner-review state
+
+- [ ] This PR remains draft until the configured owner chooses review/merge readiness.
+- [ ] If authored by the configured owner, it is described as owner-reviewed, not
+      independent human review; account authorship is not evidence of manual inspection.
+- [ ] If authored by another account, the configured reviewer approved the current exact head.
+- [ ] Required checks and conversations are resolved; no bypass is requested.
+
 ## Impact review
 
 - [ ] Tests
