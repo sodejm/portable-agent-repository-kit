@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "repository": "sodejm/portable-agent-repository-kit",
+  "owner_review": {
+    "login": "sodejm",
+    "account_type": "User"
+  },
+  "required_reviewer": {
+    "login": "sodejm",
+    "account_type": "User",
+    "minimum_permission": "write",
+    "security_qualified": true
+  }
+}

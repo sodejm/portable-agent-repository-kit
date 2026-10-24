@@ -35,6 +35,7 @@ def run_cli(
     env = os.environ.copy()
     env["HOME"] = str(home)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["GIT_CEILING_DIRECTORIES"] = str(home.parent.resolve())
     result = subprocess.run(
         [sys.executable, str(SCRIPT), *(str(argument) for argument in arguments)],
         cwd=str(cwd),

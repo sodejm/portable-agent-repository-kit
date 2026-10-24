@@ -16,6 +16,7 @@ area owns and what happens when PARK creates a project.
 ├── .claude/skills/                   generated Claude discovery copies
 ├── .github/
 │   ├── copilot-instructions.md       GitHub Copilot adapter
+│   ├── review-policy.json             repository-specific review identities
 │   ├── workflows/                    CI enforcement
 │   ├── ISSUE_TEMPLATE/               contribution intake
 │   └── dependabot.yml, CODEOWNERS    repository maintenance
@@ -67,9 +68,10 @@ Both paths use the same rendering and validation logic:
 2. Render project name, description, owner, and default branch.
 3. Require an explicit `mit`, `apache-2.0`, or `none` license choice.
 4. Replace PARK's README with the generated project's README.
-5. Synchronize environment adapters from canonical skills.
-6. Remove `.portable-agent-template` and generator-only assets.
-7. Run the repository contract validation.
+5. Reset the review policy to an unconfigured, fail-closed project copy.
+6. Synchronize environment adapters from canonical skills.
+7. Remove `.portable-agent-template` and generator-only assets.
+8. Run the repository contract validation.
 
 The resulting repository keeps the portable agent contract, skills, adapters,
 documentation, CI, and checks. It does not keep PARK's project generator, generator

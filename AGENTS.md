@@ -124,13 +124,19 @@ do not start a run or grant external-action authority by their presence alone.
   not defer all checkpoints until task completion. Use operational, imperative
   commit messages with actual validation and recovery details. Preserve unrelated
   work, existing checkpoints, signing requirements and stronger project gates.
-- Update affected documentation in the same change. Require independent human
-  review of the exact commit before merge/release; automated review is additional
-  evidence. Record and schedule retroactive review of existing code in
-  [Review coverage](docs/security/REVIEW_COVERAGE.md); do not mark pending code reviewed.
+- Update affected documentation in the same change. Follow the repository's
+  [owner-review policy](docs/OWNER_REVIEW_POLICY.md) and trusted configuration.
+  A configured owner-account PR is owner-reviewed, including agent work through
+  that account; other authors need the configured reviewer's exact-head approval.
+  Owner-reviewed is not independent human review, and account authorship cannot
+  prove manual inspection. Generated projects start unconfigured and fail closed
+  until they explicitly adopt their own identities and policy. Automated review is
+  additional evidence. Record and schedule retroactive review of existing code in
+  [Review coverage](docs/security/REVIEW_COVERAGE.md); do not mark pending code
+  reviewed.
 - Maintain the detailed [Threat model](docs/THREAT_MODEL.md) when code, dependencies,
   data flows, trust boundaries or deployment assumptions change. Record a specific
   no-impact rationale when unchanged. Reconcile at every release and quarterly.
   Keep source evidence, implemented/proposed controls, abuse cases, risk owners,
   validation and unresolved assumptions current. Human approval remains pending
-  until an independent reviewer records it.
+  until the qualified human reviewer records it.

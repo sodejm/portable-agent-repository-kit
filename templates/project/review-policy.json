@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "repository": "{{GITHUB_REPOSITORY}}",
+  "owner_review": null,
+  "required_reviewer": null
+}

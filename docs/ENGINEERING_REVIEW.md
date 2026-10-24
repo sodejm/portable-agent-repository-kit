@@ -37,14 +37,24 @@ recovery instructions, tests, and security assumptions. When documentation or th
 threat model needs no update, give a specific no-impact rationale in the PR.
 Keep examples synthetic and distinguish supported behavior from future plans.
 
-## Independent human approval
+## Owner review and conditional human approval
 
-Every change requires independent human review before merge or release. Automated
-reviews and agent self-review provide evidence but never constitute human approval.
-Use a draft PR until the required evidence and review are available. A human
-reviewer must inspect the actual diff and affected existing code, tests and
-negative cases, documentation, operational recovery, and threat-model changes.
-Security-sensitive changes require a reviewer competent in that domain.
+Follow the repository-specific [owner-review policy](OWNER_REVIEW_POLICY.md) and
+trusted configuration. A PR authored by the configured User owner is owner-reviewed,
+including when an agent operates through that account. This is not independent
+human review, and account authorship does not prove manual inspection. A PR by any
+other author needs current exact-head approval from the configured reviewer, who
+must remain a User collaborator with at least the configured write-equivalent
+permission. The repository owner must explicitly designate a qualified human
+reviewer for security-sensitive changes. Automated reviews and agent self-review
+remain supporting evidence, not human approval. An unconfigured generated project
+has no owner exception or designated reviewer and fails closed.
+
+Use a draft PR until the configured owner chooses the review and merge state. When
+human review is required or claimed, the reviewer must inspect the actual diff and
+affected existing code, tests and negative cases, documentation, operational
+recovery, and threat-model changes. Never infer manual inspection from the author
+account or a passing automated gate.
 
 Record the reviewer's identity, date, exact reviewed commit SHA and scope,
 validation evidence, findings and their disposition in the PR or a durable review

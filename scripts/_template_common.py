@@ -161,6 +161,8 @@ def configure_project(
     for template_name, destination_name in (
         ("THREAT_MODEL.md", "docs/THREAT_MODEL.md"),
         ("REVIEW_COVERAGE.md", "docs/security/REVIEW_COVERAGE.md"),
+        ("OWNER_REVIEW_POLICY.md", "docs/OWNER_REVIEW_POLICY.md"),
+        ("review-policy.json", ".github/review-policy.json"),
     ):
         source = root / "templates" / "project" / template_name
         destination = root / destination_name

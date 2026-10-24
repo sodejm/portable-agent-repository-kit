@@ -20,5 +20,7 @@ Goblin Council currently runs in Codex. In Copilot, recommend a Codex handoff wh
 the council is warranted; do not claim to execute its Codex sandboxed stages.
 Follow the extension's setup guide and supported-model requirements before use;
 do not silently install it or substitute unavailable models. Its review supplements
-the repository's checks and independent human security review, and does not grant
-permission to push, merge, or release.
+the repository's checks and conditional owner-review policy, and does not grant
+permission to push, merge, or release. Follow `docs/OWNER_REVIEW_POLICY.md`; never
+describe an owner-authored PR as independently human-reviewed, and never infer a
+generated project's identities from PARK's source policy.

@@ -3,7 +3,7 @@
 ## Status and scope
 
 Source baseline: `bfc41923fb497b495e95dc7dee644313b51b368b`. Adoption: 2026-10-08.
-Status: source-based initial model; independent human security review pending.
+Status: source-based initial model; qualified human security review pending.
 This model contains attack hypotheses, not validated vulnerability findings.
 Existing canonical security documentation and stricter acceptance gates remain
 applicable. Future changes must update this baseline rather than treating its
@@ -13,9 +13,9 @@ PARK copies and configures a repository template, synchronizes agent adapters an
 
 ## Assets, actors and assumptions
 
-Assets: User destination files; source template and instruction integrity; private local config/audit reports; project identity/license metadata; generated skills and CI; workboard state and Git history.
+Assets: User destination files; source template and instruction integrity; private local config/audit reports; project identity/license metadata; generated skills and CI; workboard state and Git history; review decisions, protected-branch settings, and exact-head check integrity.
 
-Actors: Template consumer; malicious template/skill contributor; local actor changing filesystem paths; compromised copied dependency or action; agent misinterpreting generated guidance.
+Actors: Template consumer; malicious template/skill contributor; local actor changing filesystem paths; compromised copied dependency or action; agent misinterpreting generated guidance; PR author, designated reviewer, compromised maintainer account, and workflow with check-writing authority.
 
 Assume an authorized operator, a trusted host and reviewed checkout. Treat input,
 remote responses and imported content as untrusted. Repository access or a local
@@ -32,6 +32,7 @@ private payloads and real identifiers must never be copied into this document.
 | Project parameters → token rendering / license → generated repository | Identity substitution affects documents and executable/configuration text. |
 | Canonical skills → Claude/other adapters → agent runtime | Copied instructions are capabilities, not merely prose. |
 | Generated repo → future project code / deployment | The future project owner must replace pending architecture and review scope with evidence. |
+| PR/review events → GitHub API → trusted default-branch gate → exact-head check | Untrusted event data only selects a live lookup; the gate has read access plus check-writing authority and must not execute PR content. |
 
 ```mermaid
 flowchart LR
@@ -42,6 +43,10 @@ flowchart LR
   D --> S[Pending project-specific security scaffolds]
   A --> R[Future agent runtime]
   R --> W[Local workboard and Git history]
+  P[PR and review events] --> N[Read-only notification]
+  N --> C[Trusted default-branch review gate]
+  H[Live GitHub API state] --> C
+  C --> X[Exact-head check]
 ```
 
 The flow table defines the project-specific boundaries behind this overview.
@@ -56,6 +61,10 @@ account and credential recipient rather than only their user-supplied labels.
 - `scripts/agent/sync_adapters.py`: inspect at the baseline revision; evidence scope is limited to this component.
 - `tests/test_template.py`: inspect at the baseline revision; evidence scope is limited to this component.
 - `docs/SECURITY_MODEL.md`: inspect at the baseline revision; evidence scope is limited to this component.
+- `.github/review-policy.json`, `.github/workflows/owner-review-gate.yml`,
+  `.github/workflows/review-event-notification.yml`, and
+  `scripts/ci/review_gate.py`: owner-review trust boundary introduced after the
+  baseline; tests are implementation evidence, not hosted-enforcement evidence.
 
 ## Threat register and prioritization
 
@@ -96,7 +105,9 @@ validation before the affected release/capability expansion and schedule P2 with
 - Attack path / prerequisite: Malicious template/skill changes grant agents dangerous capabilities in every generated project.
 - Inherent impact: High; likelihood: Medium; priority: P1.
 - Existing evidence / limitation: Adapter drift checks demonstrate consistency only; synchronized malicious instructions remain malicious.
-- Proposed mitigation and validation: Require independent human review of canonical instructions, CI and generator; inspect effective permissions in generated output.
+- Proposed mitigation and validation: Apply the configured owner-review policy,
+  require qualified human review where claimed, and inspect effective permissions
+  in generated output. Owner-account authorship alone is not manual-review evidence.
 - Residual risk / status: unverified; human review and evidence pending. Retain
   this entry until a reviewer records outcome, exact revision and remaining risk.
 
@@ -144,6 +155,39 @@ validation before the affected release/capability expansion and schedule P2 with
 - Proposed mitigation and validation: Human owner must document detection signals, restricted incident evidence, credential revocation, backups and a disposable restore exercise.
 - Residual risk / status: unverified; human review and evidence pending. Retain
   this entry until a reviewer records outcome, exact revision and remaining risk.
+
+### T09: Review-gate spoofing, stale state, or privileged execution
+
+- Attack path / prerequisite: A malicious PR influences a privileged job; an
+  unauthorized, bot, same-author, stale, dismissed, or changed review is accepted;
+  a check with the expected name is spoofed; or review/head state changes during
+  evaluation.
+- Inherent impact: High; likelihood: Medium; priority: P1.
+- Existing evidence / limitation: The default-branch gate uses a strict
+  repository-bound policy and live paginated API reads, validates account types and
+  collaborator permission, resolves each designated reviewer's latest decisive
+  review, checks the head again, and never checks out PR code or downloads its
+  artifacts/cache. Before fallible live authorization reads, a workflow-run event
+  creates a fresh in-progress check on its associated head; the event locates that
+  pessimistic check but never authorizes success. The review notifier has no
+  repository permissions. Tests cover malformed policy, workflow identity and PR
+  association, stale/dismissed/unauthorized/bot/same-author approvals, pre-check
+  API failure, pagination parsing, and a head race. The check workflow still has
+  `checks: write`, depends on GitHub Actions and `actions/checkout`, and source files
+  do not prove hosted protection.
+- Proposed mitigation and validation: After trusted code reaches the default
+  branch, activate and read back the protections in
+  `docs/OWNER_REVIEW_POLICY.md`; require `validate` and `Owner review gate`, bind
+  their source app where supported, cover administrators, keep bypass actors empty,
+  and verify review edits/dismissals retrigger. Re-evaluate workflow/action
+  provenance at each change.
+- Residual risk / status: A review can change after the last API read and before a
+  merge; event delivery and startup precede the pessimistic refresh, and malformed
+  or ambiguous association needs manual dispatch. Notification and manual dispatch
+  reduce but do not eliminate those windows. Another trusted check writer can
+  imitate an unbound check name, and a compromised maintainer or default-branch
+  workflow remains authoritative. Qualified human review and hosted activation
+  evidence are pending; no risk is accepted here.
 
 ## STRIDE and privacy coverage
 
