@@ -69,8 +69,11 @@ account and credential recipient rather than only their user-supplied labels.
 - `scripts/agent/check_code_documentation.py`, its policy/baseline and behavioral
   tests: offline AST inspection adds a read-only source/configuration boundary.
   The checker rejects malformed schemas, duplicate JSON keys, unsafe relative
-  paths, relevant symlinks, oversized inputs and parse errors. It does not execute
-  inspected code or print source bodies. Tests cover those negative boundaries,
+  paths, unregistered source symlinks, oversized inputs and parse errors. Registered
+  directory aliases must resolve to exact in-root canonical directories that remain
+  checked; excluded or chained targets are rejected. It does not execute inspected
+  code or print source bodies, including through Python parser warnings. Tests cover
+  those negative boundaries,
   unchanged versus changed legacy content, and generated repositories without Git.
   A local actor racing filesystem checks remains outside the trusted stable
   workspace assumption; the checks are not a sandbox or concurrent filesystem

@@ -18,6 +18,7 @@ import os
 import re
 import stat
 import sys
+import warnings
 from pathlib import Path, PurePosixPath
 
 
@@ -37,6 +38,10 @@ def _relative(value: object) -> str:
     """Validate a canonical relative path without interpreting shell syntax."""
     if not isinstance(value, str) or not value or any(ord(c) < 32 for c in value):
         raise CheckError("invalid-relative-path")
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise CheckError("invalid-relative-path-encoding") from error
     path = PurePosixPath(value)
     if (path.is_absolute() or str(path) != value or value == "."
             or ".." in path.parts or "\\" in value or ":" in value):
@@ -92,7 +97,8 @@ def _json(root: Path, relative: str) -> dict:
 def load_policy(root: Path) -> dict:
     """Validate the versioned Python scope; unsupported parser claims fail closed."""
     policy = _json(root, POLICY)
-    if set(policy) != {"version", "extensions", "exclude_dirs", "private_statement_threshold"}:
+    required = {"version", "extensions", "exclude_dirs", "private_statement_threshold"}
+    if not required <= set(policy) or set(policy) - required - {"directory_aliases"}:
         raise CheckError(f"{POLICY}:invalid-fields")
     if type(policy["version"]) is not int or policy["version"] != 1:
         raise CheckError(f"{POLICY}:unsupported-version")
@@ -107,6 +113,17 @@ def load_policy(root: Path) -> dict:
     validated = [_relative(item) for item in excludes]
     if len(set(validated)) != len(validated):
         raise CheckError(f"{POLICY}:duplicate-exclusions")
+    aliases = policy.get("directory_aliases", {})
+    if not isinstance(aliases, dict):
+        raise CheckError(f"{POLICY}:invalid-directory-aliases")
+    for alias, target in aliases.items():
+        _relative(alias)
+        _relative(target)
+        if _excluded(PurePosixPath(target).parts, excludes):
+            raise CheckError(f"{POLICY}:excluded-alias-target")
+        if any(target == other or target.startswith(other + "/") for other in aliases):
+            raise CheckError(f"{POLICY}:aliased-alias-target")
+    policy["directory_aliases"] = aliases
     return policy
 
 
@@ -150,8 +167,13 @@ def _excluded(parts: tuple[str, ...], exclusions: list[str]) -> bool:
     return False
 
 
-def python_paths(root: Path, exclusions: list[str]) -> list[str]:
-    """Discover untracked as well as tracked Python files without following links."""
+def python_paths(root: Path, exclusions: list[str], aliases: dict[str, str]) -> list[str]:
+    """Discover Python files once, skipping only verified aliases of checked directories.
+
+    Registered links must resolve to the exact canonical directory inside this
+    root. The canonical path is checked normally; unregistered or changed links
+    fail. Ordinary directories at alias paths are not excluded.
+    """
     result = []
 
     def failed_walk(error: OSError) -> None:
@@ -164,8 +186,13 @@ def python_paths(root: Path, exclusions: list[str]) -> list[str]:
             path = parent / name
             if _excluded(path.parts, exclusions):
                 continue
+            relative = _relative(path.as_posix())
             if (root / path).is_symlink():
-                raise CheckError(f"{path.as_posix()}:symlink-not-allowed")
+                expected = aliases.get(relative)
+                if (expected and (root / path).resolve(strict=True) == root / expected
+                        and (root / expected).is_dir()):
+                    continue
+                raise CheckError(f"{relative}:symlink-not-allowed")
             kept.append(name)
         dirs[:] = kept
         for name in sorted(files):
@@ -200,7 +227,7 @@ def _doc_rule(node: ast.AST) -> str | None:
     if doc is None or not doc.strip():
         return "missing-docstring"
     summary = doc.splitlines()[0].strip()
-    words = re.sub(r"[^a-z]+", " ", summary.lower()).strip()
+    words = summary.casefold().strip(" .!?…:;")
     if words in PLACEHOLDERS:
         return "placeholder-docstring"
     lines = doc.splitlines()
@@ -217,7 +244,11 @@ def inspect_source(data: bytes, path: str, threshold: int) -> list[tuple[int, st
     are checked at the configured statement threshold. Source is parsed, never run.
     """
     try:
-        tree = ast.parse(data, filename=path)
+        with warnings.catch_warnings():
+            # Parser warnings can echo source through linecache or become errors
+            # under PYTHONWARNINGS. They are outside this structural check's scope.
+            warnings.simplefilter("ignore")
+            tree = ast.parse(data, filename=path)
     except (SyntaxError, ValueError, RecursionError) as error:
         raise CheckError(f"{path}:parse-error") from error
     violations = []
@@ -249,7 +280,7 @@ def inspect_source(data: bytes, path: str, threshold: int) -> list[tuple[int, st
 def collect(root: Path, policy: dict) -> list[dict]:
     """Collect exact source digests and structural diagnostics in stable path order."""
     records = []
-    for path in python_paths(root, policy["exclude_dirs"]):
+    for path in python_paths(root, policy["exclude_dirs"], policy["directory_aliases"]):
         data = _read(root, path)
         records.append({
             "path": path, "sha256": hashlib.sha256(data).hexdigest(),

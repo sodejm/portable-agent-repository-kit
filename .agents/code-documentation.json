@@ -2,5 +2,9 @@
   "version": 1,
   "extensions": [".py"],
   "exclude_dirs": [".git", ".venv", "venv", "__pycache__", "node_modules", ".terraform", ".claude/skills"],
-  "private_statement_threshold": 10
+  "private_statement_threshold": 10,
+  "directory_aliases": {
+    ".agents/skills/goblin": "extensions/goblin-council/.agents/skills/goblin",
+    ".agents/skills/goblin-max": "extensions/goblin-council/.agents/skills/goblin-max"
+  }
 }

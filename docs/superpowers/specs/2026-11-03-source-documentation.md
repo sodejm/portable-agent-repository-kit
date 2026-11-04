@@ -41,6 +41,9 @@ prose accuracy, troubleshooting value, or actual agent skill invocation.
 - Diagnostics contain repository-relative locations and rule identifiers, not
   source bodies, credentials, or machine paths. Checks do not execute source code,
   invoke model providers, or access the network.
+- Registered in-root directory aliases may refer to canonical source that is
+  checked once at its real path. Reject retargeted, excluded or chained aliases;
+  this exception preserves the supported project-local Goblin installation.
 - Test missing, empty, and placeholder docstrings; nested and async declarations;
   syntax errors; baseline drift; path safety; adapters; and generated projects.
 

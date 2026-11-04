@@ -229,7 +229,7 @@ def configure_project(
     # Keep _template_common.py because generated adapter synchronization imports it.
     for generator_file in ("create_project.py", "configure_project.py"):
         (root / "scripts" / generator_file).unlink(missing_ok=True)
-    for generator_directory in ("templates", "tests"):
+    for generator_directory in ("templates", "tests", "docs/superpowers"):
         path = root / generator_directory
         if path.exists():
             shutil.rmtree(path)

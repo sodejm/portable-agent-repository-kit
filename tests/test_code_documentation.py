@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -47,11 +48,11 @@ class DocumentationTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
         return path
 
-    def run_check(self, *args: str) -> subprocess.CompletedProcess[str]:
+    def run_check(self, *args: str, env: dict | None = None) -> subprocess.CompletedProcess[str]:
         """Run the real command against the synthetic repository."""
         return subprocess.run(
             [sys.executable, str(SCRIPT), "--root", str(self.root), *args],
-            text=True, capture_output=True, check=False,
+            text=True, capture_output=True, check=False, cwd=self.root, env=env,
         )
 
     def test_missing_empty_and_placeholder_docstrings(self) -> None:
@@ -261,6 +262,55 @@ class _Private:
         self.assertEqual(result.returncode, 2)
         self.assertIn("invalid-file-size-or-type", result.stderr)
         self.assertNotIn(str(self.root), result.stderr)
+
+    def test_unicode_docstrings_are_not_placeholders(self) -> None:
+        """Accept useful summaries in non-Latin scripts without requiring English."""
+        for summary in ("处理用户请求。", "ユーザーの要求を処理する。", "Обработать запрос.", "Επεξεργασία αιτήματος."):
+            with self.subTest(summary=summary):
+                self.source(f'"""{summary}"""\n')
+                result = self.run_check()
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_parser_warnings_do_not_disclose_source_or_change_result(self) -> None:
+        """Suppress parser warnings even when the environment promotes them to errors."""
+        self.source('"""Describe the module."""\nPAT = "PRIVATE_SENTINEL \\d+"\n')
+        for env in (None, {**os.environ, "PYTHONWARNINGS": "error"}):
+            result = self.run_check(env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn("PRIVATE_SENTINEL", result.stdout + result.stderr)
+            self.assertEqual(result.stderr, "")
+
+    def test_registered_directory_alias_checks_only_canonical_source(self) -> None:
+        """Allow declared internal aliases without hiding their canonical violations."""
+        self.policy["directory_aliases"] = {"aliases/tool": "extensions/tool"}
+        self.write_json(".agents/code-documentation.json", self.policy)
+        canonical = self.source('"""Describe the module."""\n', "extensions/tool/source.py")
+        alias = self.root / "aliases/tool"
+        alias.parent.mkdir()
+        alias.symlink_to(canonical.parent, target_is_directory=True)
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("1 files", result.stdout)
+        canonical.write_text("pass\n")
+        result = self.run_check()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("extensions/tool/source.py", result.stdout)
+        self.assertNotIn("aliases/tool/source.py", result.stdout)
+        alias.unlink()
+        alias.symlink_to(self.root, target_is_directory=True)
+        self.assertEqual(self.run_check().returncode, 2)
+
+    def test_alias_cannot_point_to_excluded_or_aliased_scope(self) -> None:
+        """Reject exclusions and alias chains that could omit canonical checks."""
+        for aliases in ({"tool": ".venv/tool"}, {"tool": "other", "other": "tool"},
+                        {"tool": "../outside"}):
+            self.write_json(".agents/code-documentation.json", {**self.policy, "directory_aliases": aliases})
+            self.assertEqual(self.run_check().returncode, 2)
+
+    def test_non_utf8_path_is_a_configuration_error(self) -> None:
+        """Reject unencodable paths before they reach JSON or diagnostic output."""
+        with self.assertRaises(CHECKER.CheckError):
+            CHECKER._relative("bad\udcff.py")
 
 
 if __name__ == "__main__":

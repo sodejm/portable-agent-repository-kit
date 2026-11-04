@@ -95,6 +95,7 @@ class TemplateTests(unittest.TestCase):
             result = self.create(destination)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse((destination / ".portable-agent-template").exists())
+            self.assertFalse((destination / "docs/superpowers").exists())
             self.assertTrue((destination / "extensions/goblin-council/install.py").is_file())
             self.assertTrue((destination / "extensions/goblin-council/.codex/config.toml").is_file())
             self.assertFalse((destination / ".agents/skills/goblin").exists())
@@ -263,6 +264,23 @@ class TemplateTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertEqual(check().returncode, 0)
+
+    def test_generated_gate_accepts_registered_goblin_installation(self) -> None:
+        """Preserve supported project-local skill links while checking canonical code."""
+        with tempfile.TemporaryDirectory(prefix="park-goblin-docs-") as temp:
+            destination = Path(temp) / "example-service"
+            result = self.create(destination)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            installed = subprocess.run(
+                [sys.executable, "extensions/goblin-council/install.py", "--skills-dir", ".agents/skills"],
+                cwd=destination, text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(installed.returncode, 0, installed.stdout + installed.stderr)
+            result = subprocess.run(
+                [sys.executable, "scripts/agent/check_code_documentation.py"],
+                cwd=destination, text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

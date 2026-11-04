@@ -102,7 +102,8 @@ explains writing and review; the policy defines enforced rules and limitations.
   Document all new checker functions and keep their files out of the baseline.
 - [x] Add `make check-code-documentation` and invoke the same checker from
   `scripts/agent/check.py`. Document covered syntax versus manual obligations.
-- [ ] Run the focused suite, documentation gate and `make check`; checkpoint.
+- [x] Run the focused suite, documentation gate and `make check`; checkpoint
+  (`f06ccd0`).
 
 ### Task 3: Generation, security evidence and PARK delivery
 
@@ -124,7 +125,7 @@ policy and checker. It enforces new code without requiring Git initialization.
   an exemption for changed code. No generator behavior was changed.
 - [x] Record the checker input boundary, read-only behavior, baseline-tampering
   limitation and diagnostics privacy in the threat model. Keep human review pending.
-- [ ] Run `make check`, inspect the complete diff and obtain the chosen automated
+- [x] Run `make check`, inspect the complete diff and obtain the chosen automated
   review. Correct supported findings and rerun affected checks.
 - [ ] Create the final signed checkpoint, push only this branch and open a PR.
   Confirm the exact head, required checks and applicable review state before merge;
@@ -137,6 +138,9 @@ This is a sequence of independent integrations, not a bulk copy operation. Keep
 the selected repository inventory and local paths in private rollout evidence,
 not in the public template. Prepare a short per-project file/test map after PARK
 has passed and before that project's first edit.
+
+The current push and additional PR fixes are PARK-only per the user's subsequent
+instruction. No other project's files have been changed.
 
 **Shared inputs:** The merged PARK skill, policy, checker, tests and provenance.
 **Outputs per project:** One standalone branch/PR, native check integration,
@@ -160,8 +164,17 @@ project-specific legacy inventory where needed, exact validation and merge state
 ## Execution checkpoint
 
 - PARK base: `71b8c29`; branch: `feature/source-code-documentation`.
-- The user approved native execution. The skill is checkpointed; the AST gate,
-  baseline and generated-project tests are implemented. `make check` passed
-  (68 root tests, 48 skill tests, 26 extension tests; one opt-in sandbox skip).
-- Next: validate the final input-bound tests, checkpoint and obtain independent
-  automated review. No remote writes yet.
+- The user approved native execution and Opus 5.5/high for independent automated
+  review after the configured reviewer was unavailable.
+- All four findings have regression fixes: registered Goblin directory aliases,
+  non-Latin docstrings, parser-warning disclosure and source-plan inheritance.
+  Unencodable path handling also has a regression test. Tests were observed red
+  before implementation, then passed.
+- Final local validation: 22 checker tests and eight template tests pass;
+  `make check` passes with 75 root tests, 48 skill tests and 26 extension tests
+  (one existing opt-in sandbox skip). No manual review is claimed.
+- Next: checkpoint review fixes, push through the installed gate and open a
+  standalone PARK PR. Required checks and live feedback remain to be verified.
+- Merge constraint: the remote requires linear history and disallows merge
+  commits. The request for explicit squash permission was dismissed; do not
+  rewrite checkpoint history or bypass rules to merge.

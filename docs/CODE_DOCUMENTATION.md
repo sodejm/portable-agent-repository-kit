@@ -44,6 +44,14 @@ exclusions match a root-relative prefix. `.claude/skills` is generated; its
 canonical `.agents/skills` source remains checked. Standard dependency/cache
 directories are excluded, not arbitrary application directories.
 
+The optional `directory_aliases` map permits project-local Goblin installation
+links only when they resolve to their exact registered canonical directories
+inside the repository. The canonical extension code is checked once at its real
+path. Ordinary directories at alias paths remain checked; retargeted, external or
+unregistered symlinks fail. Alias targets cannot be excluded or alias other paths.
+Consumers using additional generated/dependency directories, such as `.tox` or
+`.nox`, must explicitly review and configure their exclusions.
+
 Required documentation covers:
 
 - Every Python module, including test modules and package initializers.
@@ -63,7 +71,7 @@ need review or additional native lint.
 Diagnostics are sorted and contain relative path, line, symbol and rule. Exit 0
 means the configured scope passes, 1 means documentation violations, and 2 means
 input/configuration errors prevented a complete check. Source/configuration files
-are limited to 8 MiB. Relevant symlinks, malformed configuration, unreadable input
+are limited to 8 MiB. Unregistered source symlinks, malformed configuration, unreadable input
 and invalid Python fail closed; no source body is printed in error messages.
 
 ## Legacy coverage and migration
