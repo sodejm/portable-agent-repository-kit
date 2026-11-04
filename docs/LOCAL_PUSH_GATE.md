@@ -19,9 +19,30 @@ Policy is pinned to committed Git blob IDs. Any change under `tools/push_gate/` 
 
 ## Prerequisites and checks
 
-Install Semgrep **1.181.0** and Trivy **0.76.0** from their official distributions; the gate rejects other versions. Also install Git, Python >=3.10 and uv. `requirements.txt` pins direct Python validation dependencies; project dependency locks and canonical manifests govern project installs. Transitive validation dependencies are resolved by uv and are not a fully frozen toolchain. Network/package/provider access and sufficient temporary disk space are required. When relevant files exist, install actionlint, ShellCheck, bash and hadolint: all workflows, tracked shell scripts and Dockerfiles are checked. Missing tools fail closed. Scanner overrides inherited from the caller are removed.
+Install Semgrep **1.183.0** and Trivy **0.76.1** from their official distributions; the gate rejects other versions. Also install Git, Python >=3.10 and uv. `requirements.txt` pins direct Python validation dependencies; project dependency locks and canonical manifests govern project installs. Transitive validation dependencies are resolved by uv and are not a fully frozen toolchain. Network/package/provider access and sufficient temporary disk space are required. When relevant files exist, install actionlint, ShellCheck, bash and hadolint: all workflows, tracked shell scripts and Dockerfiles are checked. Missing tools fail closed. Scanner overrides inherited from the caller are removed.
 
-Tool pins refreshed on 2026-10-18 against the official [Semgrep release](https://github.com/semgrep/semgrep/releases/tag/v1.181.0), [Trivy release](https://github.com/aquasecurity/trivy/releases/tag/v0.76.0), and PyPI package metadata. Python validation dependencies are Ruff 0.17.1, Coverage 7.16.2, Build 1.6.1, and pip-audit 2.10.1. Refreshing pins requires rerunning validation and reinstalling the committed policy; it does not change scanner rules or severity thresholds.
+Scanner pins refreshed on 2026-11-03 against the latest stable official [Semgrep release](https://github.com/semgrep/semgrep/releases/tag/v1.183.0) and [Trivy release](https://github.com/aquasecurity/trivy/releases/tag/v0.76.1). Python validation dependencies are unchanged: Ruff 0.17.1, Coverage 7.16.2, Build 1.6.1, and pip-audit 2.10.1. Refreshing pins requires rerunning validation and reinstalling the committed policy; it does not change scanner rules or severity thresholds. Scanner doubles in the gate regression suite use synthetic version fixtures; `tests/test_scanner_pins.py` checks the real reviewed pins and this guide.
+
+Semgrep 1.183.0 no longer provides native Intel macOS binaries. Apple Silicon
+requires a native arm64 Python. Intel macOS users need a separately validated
+supported execution environment for this optional gate; PARK does not install or
+qualify a container wrapper. The portable standard-library `make check` is separate
+from that scanner prerequisite. Do not use an older pin to hide this limitation.
+
+### Required pre-push pin preflight
+
+Before any push attempt, verify the latest stable releases of pinned security
+tools against their official upstream release sources. Update stale pins and
+their installation guidance and tests, review compatibility and security impact,
+then run the affected checks. Commit the reviewed update and refresh the installed
+trusted gate before attempting the push. Verify the executables selected by the
+actual push environment match the committed pins. A package-manager version alone
+is insufficient when a CLI delegates to another executable on PATH.
+
+Do not downgrade tools to satisfy stale pins, bypass hooks, or weaken scanner
+rules/severity thresholds. If release verification, a safe upgrade or required
+validation is unavailable, report the blocker before pushing. This preflight is
+an agent workflow requirement, not a claim that the hook queries upstream releases.
 
 Python >=3.10, uv, make.
 

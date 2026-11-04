@@ -153,6 +153,11 @@ validation before the affected release/capability expansion and schedule P2 with
 - Attack path / prerequisite: Copied workflow or dependency fetch executes untrusted supply-chain content.
 - Inherent impact: High; likelihood: Medium; priority: P1.
 - Existing evidence / limitation: Local contract and adapter checks exist; they are not a provenance proof.
+- Scanner maintenance: the pre-push policy requires upstream stable-release
+  verification before pushing, reviewed pin/test/doc updates and trusted-gate
+  refresh. The optional gate pins Semgrep 1.183.0 and Trivy 0.76.1; no rule,
+  severity threshold, bypass or token permission changes accompany this refresh.
+  Release recency is not evidence that a tool or transitive dependency is secure.
 - Proposed mitigation and validation: Inventory actions and downloaded tools; pin/review sources, restrict token permissions and verify release provenance.
 - Residual risk / status: unverified; human review and evidence pending. Retain
   this entry until a reviewer records outcome, exact revision and remaining risk.

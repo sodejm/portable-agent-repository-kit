@@ -170,11 +170,23 @@ project-specific legacy inventory where needed, exact validation and merge state
   non-Latin docstrings, parser-warning disclosure and source-plan inheritance.
   Unencodable path handling also has a regression test. Tests were observed red
   before implementation, then passed.
-- Final local validation: 22 checker tests and eight template tests pass;
-  `make check` passes with 75 root tests, 48 skill tests and 26 extension tests
+- The follow-up review found punctuation-wrapped placeholder acceptance and a
+  stale external-checkout Goblin setup example. Unicode-category normalization
+  now rejects all nine reproduced placeholders while preserving non-Latin prose;
+  setup guidance uses the receiving project's own extension copy.
+- The user additionally requested current scanner pins and pre-push pin-refresh
+  instructions. Upstream latest stable releases were verified as Semgrep 1.183.0
+  and Trivy 0.76.1; the policy, guide and new offline pin test are updated. The
+  guide records Semgrep's native Intel macOS support change. No scanner rule or
+  severity threshold changed. The separate selected-project policy rollout does
+  not include this source-documentation implementation.
+- Final local validation: 23 checker tests and eight template tests pass;
+  `make check` passes with 77 root tests, 48 skill tests and 26 extension tests
   (one existing opt-in sandbox skip). No manual review is claimed.
-- Next: checkpoint review fixes, push through the installed gate and open a
-  standalone PARK PR. Required checks and live feedback remain to be verified.
+- One push attempt was blocked by stale installed scanner pins; no remote update
+  occurred. Next: checkpoint, refresh the installed gate from that commit, verify
+  current executable versions, then run the gate before another push attempt.
+  Required checks and live feedback remain to be verified.
 - Merge constraint: the remote requires linear history and disallows merge
   commits. The request for explicit squash permission was dismissed; do not
   rewrite checkpoint history or bypass rules to merge.

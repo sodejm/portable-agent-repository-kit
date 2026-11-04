@@ -271,6 +271,15 @@ class _Private:
                 result = self.run_check()
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_punctuation_wrapped_placeholders_are_rejected(self) -> None:
+        """Reject empty markers and decorated TODOs without excluding Unicode prose."""
+        for summary in ("-", "--", "`...`", "[TODO]", "`TODO`", "TODO -", "# TODO", "TODO()", "(TBD)"):
+            with self.subTest(summary=summary):
+                self.source(f'"""{summary}"""\n')
+                result = self.run_check()
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("placeholder-docstring", result.stdout)
+
     def test_parser_warnings_do_not_disclose_source_or_change_result(self) -> None:
         """Suppress parser warnings even when the environment promotes them to errors."""
         self.source('"""Describe the module."""\nPAT = "PRIVATE_SENTINEL \\d+"\n')

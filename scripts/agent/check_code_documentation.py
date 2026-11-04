@@ -18,6 +18,7 @@ import os
 import re
 import stat
 import sys
+import unicodedata
 import warnings
 from pathlib import Path, PurePosixPath
 
@@ -227,7 +228,12 @@ def _doc_rule(node: ast.AST) -> str | None:
     if doc is None or not doc.strip():
         return "missing-docstring"
     summary = doc.splitlines()[0].strip()
-    words = summary.casefold().strip(" .!?…:;")
+    # Keep letters, marks and digits from every script; punctuation-wrapped TODOs
+    # and symbol-only summaries are still placeholders, not useful documentation.
+    words = " ".join("".join(
+        " " if unicodedata.category(char)[0] in "PSZ" else char
+        for char in summary.casefold()
+    ).split())
     if words in PLACEHOLDERS:
         return "placeholder-docstring"
     lines = doc.splitlines()
