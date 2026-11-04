@@ -61,6 +61,11 @@ account and credential recipient rather than only their user-supplied labels.
 - `scripts/agent/sync_adapters.py`: inspect at the baseline revision; evidence scope is limited to this component.
 - `tests/test_template.py`: inspect at the baseline revision; evidence scope is limited to this component.
 - `docs/SECURITY_MODEL.md`: inspect at the baseline revision; evidence scope is limited to this component.
+- `.agents/skills/clear-writing/` and its generated adapter: portable writing
+  instructions and original attributed guidance; no added command, network or
+  credential authority. Contract and generation tests check resource presence,
+  not prose quality or actual agent invocation. T03 still applies to instruction
+  integrity; human review remains pending.
 - `.github/review-policy.json`, `.github/workflows/owner-review-gate.yml`,
   `.github/workflows/review-event-notification.yml`, and
   `scripts/ci/review_gate.py`: owner-review trust boundary introduced after the

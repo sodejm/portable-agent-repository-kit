@@ -76,6 +76,25 @@ Update affected user, contributor, architecture, operations, and security docs i
 the same change. If no documentation changes are needed, record a brief rationale
 in the pull request or handoff.
 
+### Source-code documentation
+
+Use the repository-local [clear-writing skill](.agents/skills/clear-writing/SKILL.md)
+with each language's native docstring or documentation-comment convention. Read
+the skill directly when the agent host does not discover skills; report missing
+resources instead of claiming compliance. Follow the
+[source documentation policy](docs/CODE_DOCUMENTATION.md) for all languages,
+including scripts, tests, build tooling and infrastructure.
+
+Document public interfaces and major internal functions, types and algorithms.
+Explain purpose, constraints, side effects, failure conditions and non-obvious
+invariants where relevant, so readers can use, maintain and troubleshoot the code.
+Keep documentation synchronized with behavior; avoid statement-by-statement
+narration, empty boilerplate and unsupported guarantees. New and materially
+changed code must comply; unrelated legacy gaps remain explicit backlog rather
+than justification for a broad rewrite. Validate applicable structure and examples
+with repository-owned checks, then review accuracy against implementation and
+tests. A lint pass does not prove prose quality or skill invocation.
+
 ## Meaningful change standard
 
 Do not make churn-only edits.

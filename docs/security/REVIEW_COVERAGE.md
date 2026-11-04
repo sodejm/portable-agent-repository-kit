@@ -33,3 +33,12 @@ Review installer ownership checks, model routes, sandbox probes, snapshot and
 promotion logic, recovery, and generated-project isolation at the exact proposed
 commit. Owner: `sodejm`, owner-designated security reviewer; deadline: before
 affected release. Local automated checks do not close this review.
+
+## Portable source documentation contribution
+
+Pending qualified human review: `.agents/skills/clear-writing/**`, its generated
+adapter, `AGENTS.md`, `docs/CODE_DOCUMENTATION.md`, contract validation and template
+tests. Review provenance, instruction scope and the distinction between
+structural checks and human assessment. Owner: `sodejm`, owner-designated security
+reviewer; deadline: before affected release. Automated checks do not establish
+skill invocation or close this review.

@@ -1,3 +1,5 @@
+"""Exercise generation, privacy boundaries and portable contract behavior."""
+
 from __future__ import annotations
 
 import json
@@ -16,7 +18,10 @@ from _template_common import copy_template, synchronize_claude_skills
 
 
 class TemplateTests(unittest.TestCase):
+    """Validate template output using isolated synthetic repositories."""
+
     def test_distribution_excludes_private_configuration_and_audit_reports(self) -> None:
+        """Keep private sentinels out of distribution and adapter copies."""
         with tempfile.TemporaryDirectory(prefix="park-privacy-") as temp:
             source, destination = Path(temp) / "source", Path(temp) / "copy"
             skill = source / ".agents/skills/example-audit"
@@ -41,6 +46,7 @@ class TemplateTests(unittest.TestCase):
                 self.assertEqual(path.read_text(encoding="utf-8"), "synthetic private sentinel\n")
 
     def create(self, destination: Path, license_choice: str = "mit") -> subprocess.CompletedProcess[str]:
+        """Generate a synthetic project outside the source tree and return CLI output."""
         create_script = CREATE
         try:
             destination.resolve().relative_to(ROOT.resolve())
@@ -83,6 +89,7 @@ class TemplateTests(unittest.TestCase):
         )
 
     def test_create_project_and_validate_generated_repository(self) -> None:
+        """Check generated policy, skill resources and the full consumer gate."""
         with tempfile.TemporaryDirectory(prefix="park-test-") as temp:
             destination = Path(temp) / "example-service"
             result = self.create(destination)
@@ -120,6 +127,12 @@ class TemplateTests(unittest.TestCase):
             self.assertTrue((destination / "LICENSE").is_file())
             self.assertIn("# Example Service", (destination / "README.md").read_text(encoding="utf-8"))
             self.assertTrue((destination / ".claude/skills/.park-generated").is_file())
+            for parent in (".agents/skills", ".claude/skills"):
+                for resource in (
+                    "SKILL.md", "references/source-documentation.md", "references/provenance.md"
+                ):
+                    self.assertTrue((destination / parent / "clear-writing" / resource).is_file())
+            self.assertTrue((destination / "docs/CODE_DOCUMENTATION.md").is_file())
             self.assertTrue(
                 (destination / ".agents/skills/agent-workboard/scripts/workboard.py").is_file()
             )
@@ -164,6 +177,7 @@ class TemplateTests(unittest.TestCase):
             self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
 
     def test_nonempty_destination_is_never_overwritten(self) -> None:
+        """Reject an occupied destination without changing its sentinel."""
         with tempfile.TemporaryDirectory(prefix="park-test-") as temp:
             destination = Path(temp) / "existing"
             destination.mkdir()
@@ -175,6 +189,7 @@ class TemplateTests(unittest.TestCase):
             self.assertIn("refusing to overwrite", result.stderr)
 
     def test_none_is_an_explicit_license_choice(self) -> None:
+        """Allow a consumer to choose no license instead of silently choosing one."""
         with tempfile.TemporaryDirectory(prefix="park-test-") as temp:
             destination = Path(temp) / "unlicensed-project"
             result = self.create(destination, "none")
@@ -182,6 +197,7 @@ class TemplateTests(unittest.TestCase):
             self.assertFalse((destination / "LICENSE").exists())
 
     def test_generated_repository_rejects_broken_markdown_links(self) -> None:
+        """Reject missing local documentation targets in generated projects."""
         with tempfile.TemporaryDirectory(prefix="park-test-") as temp:
             destination = Path(temp) / "broken-docs-project"
             result = self.create(destination)
@@ -200,6 +216,23 @@ class TemplateTests(unittest.TestCase):
             )
             self.assertEqual(check.returncode, 1)
             self.assertIn("Markdown target does not exist", check.stderr)
+
+    def test_contract_requires_portable_clear_writing(self) -> None:
+        """Reject a missing skill even when no Markdown link refers to it."""
+        with tempfile.TemporaryDirectory(prefix="park-docs-contract-") as temp:
+            destination = Path(temp) / "example-service"
+            result = self.create(destination)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            skill = destination / ".agents/skills/clear-writing/SKILL.md"
+            # The gate must require the skill independently of prose links.
+            if skill.exists():
+                skill.unlink()
+            check = subprocess.run(
+                [sys.executable, "scripts/agent/validate_contract.py"],
+                cwd=destination, text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(check.returncode, 1, check.stdout + check.stderr)
+            self.assertIn("missing required path: .agents/skills/clear-writing/SKILL.md", check.stderr)
 
 
 if __name__ == "__main__":

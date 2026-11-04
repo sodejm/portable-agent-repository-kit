@@ -5,6 +5,7 @@
 - [Portability Architecture](PORTABILITY.md): canonical spine and adapters.
 - [Compatibility](COMPATIBILITY.md): environment-by-environment support boundary.
 - [Skills](SKILLS.md): authoring, synchronization, and global-skill selection.
+- [Source documentation](CODE_DOCUMENTATION.md): writing requirements, language conventions and check coverage.
 - [Hooks](HOOKS.md): safe optional automation.
 - [MCP](MCP.md): portable tool-server strategy and client configuration.
 - [Security Model](SECURITY_MODEL.md): assets, threats, controls, and limits.
