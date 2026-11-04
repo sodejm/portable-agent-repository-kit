@@ -183,10 +183,15 @@ project-specific legacy inventory where needed, exact validation and merge state
 - Final local validation: 23 checker tests and eight template tests pass;
   `make check` passes with 77 root tests, 48 skill tests and 26 extension tests
   (one existing opt-in sandbox skip). No manual review is claimed.
-- One push attempt was blocked by stale installed scanner pins; no remote update
-  occurred. Next: checkpoint, refresh the installed gate from that commit, verify
-  current executable versions, then run the gate before another push attempt.
-  Required checks and live feedback remain to be verified.
+- The initial push attempt was blocked by stale installed scanner pins. The gate
+  was then refreshed in place from checkpoint `c423286`; official latest-release
+  and actual executable versions matched the committed pins. Installed-gate
+  validation passed on that exact commit, including real scanners and pip-audit.
+- The final independent Opus review of `c423286` found one guide-structure issue:
+  existing prerequisites appeared under the new agent-only preflight heading.
+  Those paragraphs now remain under their original prerequisites section. No
+  executable behavior, scanner rule or threat-model boundary changed in this fix.
+  Required hosted checks and live feedback remain to be verified.
 - Merge constraint: the remote requires linear history and disallows merge
   commits. The request for explicit squash permission was dismissed; do not
   rewrite checkpoint history or bypass rules to merge.

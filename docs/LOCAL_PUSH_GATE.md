@@ -29,6 +29,12 @@ supported execution environment for this optional gate; PARK does not install or
 qualify a container wrapper. The portable standard-library `make check` is separate
 from that scanner prerequisite. Do not use an older pin to hide this limitation.
 
+Python >=3.10, uv, make.
+
+make check (contracts, adapters, template/workboard and skill tests); unittest branch coverage report; pip-audit. Existing checks remain standard-library-only; the optional push gate adds development tools.
+
+Every profile also validates the gate with Ruff lint/format and its disposable Git regression tests, checks whitespace, and runs the scanners before dependency installation or generated build artifacts. Checks never apply automatic fixes, stage, commit or push. Builds, dependency downloads and generated files stay in disposable snapshots or tool caches. Canonical tools may use caches outside the snapshot.
+
 ### Required pre-push pin preflight
 
 Before any push attempt, verify the latest stable releases of pinned security
@@ -43,12 +49,6 @@ Do not downgrade tools to satisfy stale pins, bypass hooks, or weaken scanner
 rules/severity thresholds. If release verification, a safe upgrade or required
 validation is unavailable, report the blocker before pushing. This preflight is
 an agent workflow requirement, not a claim that the hook queries upstream releases.
-
-Python >=3.10, uv, make.
-
-make check (contracts, adapters, template/workboard and skill tests); unittest branch coverage report; pip-audit. Existing checks remain standard-library-only; the optional push gate adds development tools.
-
-Every profile also validates the gate with Ruff lint/format and its disposable Git regression tests, checks whitespace, and runs the scanners before dependency installation or generated build artifacts. Checks never apply automatic fixes, stage, commit or push. Builds, dependency downloads and generated files stay in disposable snapshots or tool caches. Canonical tools may use caches outside the snapshot.
 
 ## Security rules and reproducibility
 
