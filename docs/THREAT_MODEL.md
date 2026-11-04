@@ -66,6 +66,17 @@ account and credential recipient rather than only their user-supplied labels.
   credential authority. Contract and generation tests check resource presence,
   not prose quality or actual agent invocation. T03 still applies to instruction
   integrity; human review remains pending.
+- `scripts/agent/check_code_documentation.py`, its policy/baseline and behavioral
+  tests: offline AST inspection adds a read-only source/configuration boundary.
+  The checker rejects malformed schemas, duplicate JSON keys, unsafe relative
+  paths, relevant symlinks, oversized inputs and parse errors. It does not execute
+  inspected code or print source bodies. Tests cover those negative boundaries,
+  unchanged versus changed legacy content, and generated repositories without Git.
+  A local actor racing filesystem checks remains outside the trusted stable
+  workspace assumption; the checks are not a sandbox or concurrent filesystem
+  security primitive. Baseline/policy changes can weaken coverage and require
+  review. Structural success does not establish prose accuracy or other-language
+  coverage. No network, credential or deployment authority is added.
 - `.github/review-policy.json`, `.github/workflows/owner-review-gate.yml`,
   `.github/workflows/review-event-notification.yml`, and
   `scripts/ci/review_gate.py`: owner-review trust boundary introduced after the

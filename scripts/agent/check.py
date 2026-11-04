@@ -13,12 +13,14 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def run(command: list[str]) -> bool:
+    """Run a repository check and return whether it exited successfully."""
     print("+ " + " ".join(command), flush=True)
     result = subprocess.run(command, cwd=ROOT, check=False)
     return result.returncode == 0
 
 
 def validate_python() -> bool:
+    """Parse Python files without executing them; report syntax and encoding errors."""
     ok = True
     for path in sorted(ROOT.rglob("*.py")):
         if ".git" in path.parts:
@@ -34,10 +36,12 @@ def validate_python() -> bool:
 
 
 def main() -> int:
+    """Run portable gates and applicable suites, failing if any check fails."""
     checks = [
         validate_python(),
         run([sys.executable, "scripts/agent/validate_contract.py"]),
         run([sys.executable, "scripts/agent/sync_adapters.py", "--check"]),
+        run([sys.executable, "scripts/agent/check_code_documentation.py"]),
     ]
     if (ROOT / "tests").is_dir():
         checks.append(run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"]))

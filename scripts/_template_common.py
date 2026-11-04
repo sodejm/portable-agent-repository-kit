@@ -22,10 +22,16 @@ class TemplateError(RuntimeError):
 
 
 def template_root() -> Path:
+    """Return the checkout root containing this generator module."""
     return Path(__file__).resolve().parents[1]
 
 
 def ensure_empty_destination(destination: Path) -> None:
+    """Reject an existing file or populated directory with TemplateError.
+
+    A missing destination is allowed. This preflight does not reserve the path
+    against concurrent writers; callers must use a stable local workspace.
+    """
     if destination.exists() and not destination.is_dir():
         raise TemplateError(f"destination exists and is not a directory: {destination}")
     if destination.exists() and any(destination.iterdir()):
@@ -33,6 +39,11 @@ def ensure_empty_destination(destination: Path) -> None:
 
 
 def copy_template(source: Path, destination: Path) -> None:
+    """Copy a template into an empty external destination, excluding private artifacts.
+
+    Reject source recursion and occupied destinations before copying. Filesystem
+    failures can leave a partial destination; this operation is not transactional.
+    """
     source = source.resolve()
     destination = destination.resolve()
     if destination == source or source in destination.parents:
@@ -56,6 +67,7 @@ def copy_template(source: Path, destination: Path) -> None:
 
 
 def validate_slug(value: str) -> str:
+    """Return a lowercase hyphenated slug, or raise TemplateError for invalid input."""
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", value):
         raise TemplateError(
             "project slug must contain lowercase letters, digits, and single hyphens"
@@ -64,6 +76,7 @@ def validate_slug(value: str) -> str:
 
 
 def inferred_slug(name: str) -> str:
+    """Derive a valid slug from a display name; reject names without usable letters or digits."""
     slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
     if not slug:
         raise TemplateError("could not derive a project slug from the supplied name")
@@ -71,6 +84,7 @@ def inferred_slug(name: str) -> str:
 
 
 def validate_owner(value: str | None) -> str | None:
+    """Validate an optional GitHub account name without performing a network lookup."""
     if value is None:
         return None
     if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?", value):
@@ -79,6 +93,11 @@ def validate_owner(value: str | None) -> str | None:
 
 
 def replace_tokens(root: Path, replacements: dict[str, str]) -> None:
+    """Replace literal tokens in UTF-8 files, leaving Git metadata and binary files alone.
+
+    Replacements apply to source as well as documentation and are performed in
+    mapping order. Callers must validate values before invoking this write operation.
+    """
     for path in root.rglob("*"):
         if not path.is_file() or ".git" in path.parts:
             continue
@@ -94,6 +113,11 @@ def replace_tokens(root: Path, replacements: dict[str, str]) -> None:
 
 
 def write_license(root: Path, choice: str, copyright_holder: str) -> None:
+    """Render a selected license, or remove LICENSE when the explicit choice is none.
+
+    The license template supplies the terms; the current year and caller-provided
+    holder are substituted. Raise TemplateError if the selected template is missing.
+    """
     license_path = root / "LICENSE"
     if choice == "none":
         license_path.unlink(missing_ok=True)
@@ -108,6 +132,11 @@ def write_license(root: Path, choice: str, copyright_holder: str) -> None:
 
 
 def synchronize_claude_skills(root: Path) -> None:
+    """Rebuild the generated Claude skill tree from canonical repository skills.
+
+    The entire generated target is replaced; callers must not store hand-authored
+    files there. Distribution exclusions prevent copying known private artifacts.
+    """
     canonical = root / ".agents" / "skills"
     target = root / ".claude" / "skills"
     if not canonical.is_dir():
@@ -139,6 +168,13 @@ def configure_project(
     copyright_holder: str | None,
     default_branch: str,
 ) -> None:
+    """Configure a marked template and remove source-only generator assets.
+
+    Validate identity and license choices before rendering. Generated projects
+    receive unconfigured review identities, pending security documents and rebuilt
+    adapters rather than PARK's approval claims. Writes are not transactional;
+    inspect a failed destination before retrying instead of overwriting user work.
+    """
     root = root.resolve()
     marker = root / TEMPLATE_MARKER
     if not marker.is_file():
@@ -200,6 +236,7 @@ def configure_project(
 
 
 def initialize_git(root: Path, default_branch: str) -> None:
+    """Initialize Git on the chosen branch, raising TemplateError if Git fails."""
     import subprocess
 
     result = subprocess.run(
@@ -215,4 +252,5 @@ def initialize_git(root: Path, default_branch: str) -> None:
 
 
 def display_path(path: Path) -> str:
+    """Return a resolved filesystem path for local CLI output, not public evidence."""
     return os.fspath(path.resolve())

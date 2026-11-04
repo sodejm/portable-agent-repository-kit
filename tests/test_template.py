@@ -234,6 +234,36 @@ class TemplateTests(unittest.TestCase):
             self.assertEqual(check.returncode, 1, check.stdout + check.stderr)
             self.assertIn("missing required path: .agents/skills/clear-writing/SKILL.md", check.stderr)
 
+    def test_generated_documentation_gate_without_git_and_with_new_code(self) -> None:
+        """Check consumer code before Git init, after init and before its first commit."""
+        with tempfile.TemporaryDirectory(prefix="park-generated-docs-") as temp:
+            destination = Path(temp) / "example-service"
+            result = self.create(destination)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            def check() -> subprocess.CompletedProcess[str]:
+                return subprocess.run(
+                    [sys.executable, "scripts/agent/check_code_documentation.py"],
+                    cwd=destination, text=True, capture_output=True, check=False,
+                )
+
+            self.assertFalse((destination / ".git").exists())
+            result = check()
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            subprocess.run(["git", "init", "--quiet"], cwd=destination, check=True)
+            self.assertEqual(check().returncode, 0)
+            code = destination / "consumer.py"
+            code.write_text("def process():\n    pass\n", encoding="utf-8")
+            result = check()
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("consumer.py:1:<module>:missing-docstring", result.stdout)
+            code.write_text(
+                '"""Provide a synthetic consumer API."""\n'
+                'def process():\n    """Return no value for this synthetic example."""\n    return None\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(check().returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

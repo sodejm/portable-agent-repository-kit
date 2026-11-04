@@ -22,6 +22,9 @@ REQUIRED = (
     ".agents/skills/clear-writing/references/source-documentation.md",
     ".agents/skills/clear-writing/references/provenance.md",
     "docs/CODE_DOCUMENTATION.md",
+    ".agents/code-documentation.json",
+    ".agents/code-documentation-baseline.json",
+    "scripts/agent/check_code_documentation.py",
     "docs/COMPATIBILITY.md",
     "docs/SECURITY_MODEL.md",
 )

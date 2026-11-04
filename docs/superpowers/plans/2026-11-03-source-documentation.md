@@ -64,7 +64,7 @@ explains writing and review; the policy defines enforced rules and limitations.
   documentation policy without changing unrelated review or authority rules.
 - [x] Require the skill and policy in contract validation, synchronize adapters,
   and rerun the focused tests plus contract validation.
-- [ ] Checkpoint with exact validation and a Git-revert recovery note.
+- [x] Checkpoint with exact validation and a Git-revert recovery note (`98042ad`).
 
 ### Task 2: Python AST gate and reviewed legacy baseline
 
@@ -88,19 +88,19 @@ explains writing and review; the policy defines enforced rules and limitations.
   violation identifiers. An entry never excuses a different content hash or a
   violation not recorded in that entry. Deleted files do not fail the check.
 
-- [ ] Add failing fixture tests for missing/empty/placeholder module and public
+- [x] Add failing fixture tests for missing/empty/placeholder module and public
   declaration docstrings; valid one-line and multiline docstrings; decorators;
   async functions; public methods; private functions below/at the 10-statement
   threshold; nested definitions; strings containing fake code; and syntax errors.
-- [ ] Add failing tests for unmodified legacy files, changed legacy files, new
+- [x] Add failing tests for unmodified legacy files, changed legacy files, new
   files, removed files, malformed/duplicate baseline entries, traversal paths,
   symlink escapes and stable diagnostics. Test that checks never update baselines.
-- [ ] Implement deterministic discovery, AST traversal and baseline comparison.
+- [x] Implement deterministic discovery, AST traversal and baseline comparison.
   Read Python encodings correctly. Ignore generated directories explicitly;
   do not depend on Git tracking so new files and generated projects are checked.
-- [ ] Run tests; generate and review the initial PARK-only legacy inventory.
+- [x] Run tests; generate and review the initial PARK-only legacy inventory.
   Document all new checker functions and keep their files out of the baseline.
-- [ ] Add `make check-code-documentation` and invoke the same checker from
+- [x] Add `make check-code-documentation` and invoke the same checker from
   `scripts/agent/check.py`. Document covered syntax versus manual obligations.
 - [ ] Run the focused suite, documentation gate and `make check`; checkpoint.
 
@@ -115,11 +115,14 @@ explains writing and review; the policy defines enforced rules and limitations.
 **Interfaces:** A generated project retains canonical skill, synchronized adapter,
 policy and checker. It enforces new code without requiring Git initialization.
 
-- [ ] Test generation before Git init, after empty Git init and after adding a new
+- [x] Test generation before Git init, after empty Git init and after adding a new
   undocumented Python file. Assert the first two pass and the last fails; a
   documented replacement passes. Verify source-only removals do not break checks.
-- [ ] Make only the generator adjustments required by those regression tests.
-- [ ] Record the checker input boundary, read-only behavior, baseline-tampering
+- [x] Make only the generator adjustments required by those regression tests.
+  Token rendering changed the generator helper's hash in consumer projects;
+  documented that helper and removed its legacy exception rather than regenerating
+  an exemption for changed code. No generator behavior was changed.
+- [x] Record the checker input boundary, read-only behavior, baseline-tampering
   limitation and diagnostics privacy in the threat model. Keep human review pending.
 - [ ] Run `make check`, inspect the complete diff and obtain the chosen automated
   review. Correct supported findings and rerun affected checks.
@@ -157,6 +160,8 @@ project-specific legacy inventory where needed, exact validation and merge state
 ## Execution checkpoint
 
 - PARK base: `71b8c29`; branch: `feature/source-code-documentation`.
-- The user approved native execution. Task 1's portable skill and contract pass
-  all six template tests, contract validation and adapter consistency checks.
-- Next: checkpoint Task 1, then implement the source checker. No remote writes yet.
+- The user approved native execution. The skill is checkpointed; the AST gate,
+  baseline and generated-project tests are implemented. `make check` passed
+  (68 root tests, 48 skill tests, 26 extension tests; one opt-in sandbox skip).
+- Next: validate the final input-bound tests, checkpoint and obtain independent
+  automated review. No remote writes yet.

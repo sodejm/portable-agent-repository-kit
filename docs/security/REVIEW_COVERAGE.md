@@ -42,3 +42,9 @@ tests. Review provenance, instruction scope and the distinction between
 structural checks and human assessment. Owner: `sodejm`, owner-designated security
 reviewer; deadline: before affected release. Automated checks do not establish
 skill invocation or close this review.
+
+The source-check scope also includes `scripts/agent/check_code_documentation.py`,
+`.agents/code-documentation*.json`, `tests/test_code_documentation.py`, generator
+regressions and `make check` integration. Review exact-content legacy exemptions,
+parser coverage, path/input rejection and diagnostics privacy. All human review
+remains pending; the baseline is documentation debt, not an approval record.

@@ -1,6 +1,6 @@
 # Portable source documentation specification
 
-Status: proposed; implementation has not started.
+Status: user-approved; PARK implementation is undergoing validation and review.
 
 ## Outcome
 

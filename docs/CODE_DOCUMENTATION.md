@@ -32,10 +32,68 @@ The portable contract validates that the writing skill and this policy are
 present, and adapter checks detect drift. Neither check proves that an agent
 invoked the skill or that documentation is accurate.
 
-The planned source gate uses Python's standard-library AST for PARK's Python
-code. It will enforce structural coverage with a reviewed legacy baseline. The
-implementation plan describes acceptance tests; until that gate is implemented,
-do not claim automated declaration-level enforcement.
+Run `make check-code-documentation` for the source gate, or `make check` for all
+repository checks. The existing `Repository contract` CI workflow runs the same
+gate through `make check`. Python's standard-library AST parser reads source
+without importing it or running decorators. No package or network is needed.
+
+The gate checks all `.py` files under the repository, including untracked files,
+except explicitly excluded directories in `.agents/code-documentation.json`.
+Single-component exclusions match directory names anywhere; multi-component
+exclusions match a root-relative prefix. `.claude/skills` is generated; its
+canonical `.agents/skills` source remains checked. Standard dependency/cache
+directories are excluded, not arbitrary application directories.
+
+Required documentation covers:
+
+- Every Python module, including test modules and package initializers.
+- Public-named module-level functions/classes and methods of public classes.
+  Protocol dunders count as public. Dynamic exports are not inferred.
+- Private or nested declarations with at least 10 executable statements,
+  including nested control flow but excluding nested declaration bodies and
+  standalone string expressions. This threshold is only a mechanical minimum;
+  smaller functions with subtle behavior still need documentation under the policy.
+
+Checks reject missing/empty docstrings, exact placeholder summaries such as
+`TODO`, `TBD` or `...`, and extended docstrings without a blank line after the
+summary. This is a structural subset of PEP 257, not a complete style checker.
+Use the existing section format; type and parameter-section consistency still
+need review or additional native lint.
+
+Diagnostics are sorted and contain relative path, line, symbol and rule. Exit 0
+means the configured scope passes, 1 means documentation violations, and 2 means
+input/configuration errors prevented a complete check. Source/configuration files
+are limited to 8 MiB. Relevant symlinks, malformed configuration, unreadable input
+and invalid Python fail closed; no source body is printed in error messages.
+
+## Legacy coverage and migration
+
+`.agents/code-documentation-baseline.json` records existing violations, the exact
+file SHA-256 and relative path. It is a backlog, not evidence that those files are
+documented or reviewed. Only identical file contents and recorded rules are
+exempt. A changed file must satisfy the rules throughout that file; new files have
+no exemption. Missing/deleted files are harmless, including source-only assets
+removed by project generation. A fully compliant file passes even with a stale
+baseline entry; remove stale entries during a reviewed baseline cleanup.
+
+To inspect current gaps without changing anything:
+
+```sh
+python3 scripts/agent/check_code_documentation.py --inventory-json
+```
+
+The command prints candidate baseline JSON, not an updated approval. Review every
+entry before adopting an initial inventory in another project. Do not refresh a
+baseline to hide new violations; additions, exclusions and threshold changes
+require the same review as the check itself. Routine checks never write policy,
+baseline or source. To diagnose a failure, find the relative location, add accurate
+documentation, and rerun the gate. Do not suppress a parse error as documentation
+debt.
+
+Generated projects retain the skill, policy, baseline and gate. The check works
+before Git initialization and checks new consumer code without staging it.
+
+## Additional languages and human review
 
 Other languages require project-specific native checks. A table of language
 conventions is not an implementation of their parsers. Record which checks run,

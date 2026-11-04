@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "extensions": [".py"],
+  "exclude_dirs": [".git", ".venv", "venv", "__pycache__", "node_modules", ".terraform", ".claude/skills"],
+  "private_statement_threshold": 10
+}
