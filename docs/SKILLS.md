@@ -35,6 +35,8 @@ are excluded. Do not edit generated copies.
   Codex session evidence for editing activity and token usage.
 - `security-review`: generic defensive change review.
 - `documentation-impact`: documentation mapping and validation.
+- `clear-writing`: accurate, reader-focused prose and native source documentation;
+  bundled references work offline without a personal skill installation.
 
 ## Local churn and usage audits
 

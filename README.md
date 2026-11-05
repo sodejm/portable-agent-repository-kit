@@ -89,6 +89,11 @@ is source-only; it is removed when a project is generated along with the generat
 itself. The reusable skills are generic rewrites of durable practices—not copies of
 account-level plugins or project-specific rules.
 
+The portable [clear-writing skill](.agents/skills/clear-writing/SKILL.md) combines
+reader-focused prose with native language documentation conventions. See the
+[source documentation policy](docs/CODE_DOCUMENTATION.md) for requirements and
+the distinction between automated checks and review of meaning.
+
 ## Documentation
 
 Start with [Getting Started](docs/GETTING_STARTED.md), then use the

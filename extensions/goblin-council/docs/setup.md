@@ -18,11 +18,16 @@ This registers `goblin` and `goblin-max` symlinks under `~/.agents/skills`.
 It does not overwrite an existing skill, change config, install hooks, or move
 credentials. Existing installations from another checkout are refused. Remove
 those through their original installer after inspecting ownership, or use a
-separate destination. For project-only discovery:
+separate destination. For project-only discovery in a project with PARK's source
+documentation gate, run that project's own installer from its root:
 
 ```sh
-python3 extensions/goblin-council/install.py --skills-dir /path/to/project/.agents/skills
+python3 extensions/goblin-council/install.py --skills-dir .agents/skills
 ```
+
+Do not run PARK's installer against a different project's skills directory: those
+links point outside that project and its documentation gate rejects them. Generated
+projects include their own extension copy; the gate checks its canonical code.
 
 Refresh Codex skill discovery or start a new session. Invoke `$goblin` with a
 bounded task and acceptance criteria; use `$goblin-max` explicitly for max mode.

@@ -19,17 +19,76 @@ Policy is pinned to committed Git blob IDs. Any change under `tools/push_gate/` 
 
 ## Prerequisites and checks
 
-Install Semgrep **1.181.0** and Trivy **0.76.0** from their official distributions; the gate rejects other versions. Also install Git, Python >=3.10 and uv. `requirements.txt` pins direct Python validation dependencies; project dependency locks and canonical manifests govern project installs. Transitive validation dependencies are resolved by uv and are not a fully frozen toolchain. Network/package/provider access and sufficient temporary disk space are required. When relevant files exist, install actionlint, ShellCheck, bash and hadolint: all workflows, tracked shell scripts and Dockerfiles are checked. Missing tools fail closed. Scanner overrides inherited from the caller are removed.
+Install Semgrep **1.183.0** and Trivy **0.76.1** from their official distributions; the gate rejects other versions. Also install Git, Python >=3.11 and uv. `tools/push_gate/requirements.txt` pins direct Python validation dependencies; project dependency locks and canonical manifests govern project installs. Transitive validation dependencies are resolved by uv and are not a fully frozen toolchain. Network/package/provider access and sufficient temporary disk space are required. When relevant files exist, install actionlint, ShellCheck, bash and hadolint: all workflows, tracked shell scripts and Dockerfiles are checked. Missing tools fail closed. Scanner overrides inherited from the caller are removed.
 
-Tool pins refreshed on 2026-10-18 against the official [Semgrep release](https://github.com/semgrep/semgrep/releases/tag/v1.181.0), [Trivy release](https://github.com/aquasecurity/trivy/releases/tag/v0.76.0), and PyPI package metadata. Python validation dependencies are Ruff 0.17.1, Coverage 7.16.2, Build 1.6.1, and pip-audit 2.10.1. Refreshing pins requires rerunning validation and reinstalling the committed policy; it does not change scanner rules or severity thresholds.
+Scanner pins refreshed on 2026-11-03 against the latest stable official [Semgrep release](https://github.com/semgrep/semgrep/releases/tag/v1.183.0) and [Trivy release](https://github.com/aquasecurity/trivy/releases/tag/v0.76.1). Python validation dependencies were checked against PyPI on 2026-11-04: Ruff 0.17.3, Coverage 7.17.2, Build 1.6.1, and pip-audit 2.10.1. Coverage 7.17 requires Python 3.11 or newer, raising the optional gate's prerequisite without changing the portable standard-library checks. Refreshing pins requires rerunning validation and reinstalling the committed policy; it does not change scanner rules or severity thresholds. Scanner doubles in the gate regression suite use synthetic version fixtures; `tests/test_scanner_pins.py` checks the real reviewed pins and this guide.
 
-Python >=3.10, uv, make.
+Semgrep 1.183.0 no longer provides native Intel macOS binaries. Apple Silicon
+requires a native arm64 Python. Intel macOS users need a separately validated
+supported execution environment for this optional gate; PARK does not install or
+qualify a container wrapper. The portable standard-library `make check` is separate
+from that scanner prerequisite. Do not use an older pin to hide this limitation.
+
+Python >=3.11, uv, make.
 
 make check (contracts, adapters, template/workboard and skill tests); unittest branch coverage report; pip-audit. Existing checks remain standard-library-only; the optional push gate adds development tools.
 
 Every profile also validates the gate with Ruff lint/format and its disposable Git regression tests, checks whitespace, and runs the scanners before dependency installation or generated build artifacts. Checks never apply automatic fixes, stage, commit or push. Builds, dependency downloads and generated files stay in disposable snapshots or tool caches. Canonical tools may use caches outside the snapshot.
 
+### Required pre-push pin preflight
+
+Before any push attempt, verify the latest stable releases of pinned security
+tools against their official upstream release sources. Update stale pins and
+their installation guidance and tests, review compatibility and security impact,
+then run the affected checks. Commit the reviewed update and refresh the installed
+trusted gate before attempting the push. Verify the executables selected by the
+actual push environment match the committed pins. A package-manager version alone
+is insufficient when a CLI delegates to another executable on PATH.
+
+Do not downgrade tools to satisfy stale pins, bypass hooks, or weaken scanner
+rules/severity thresholds. If release verification, a safe upgrade or required
+validation is unavailable, report the blocker before pushing. This preflight is
+an agent workflow requirement, not a claim that the hook queries upstream releases.
+
 ## Security rules and reproducibility
+
+### Scanner dependency findings and scoped acceptance (2026-11-04)
+
+The separately installed Semgrep 1.183.0 Python environment has five known
+medium-severity advisories. Its metadata requires `mcp==1.29.0` and
+`opentelemetry-api~=1.37.0`, excluding the patched versions:
+
+- `mcp`: CVE-2026-59951, CVE-2026-116684, CVE-2026-116685 and CVE-2026-116686;
+  the supported 1.x fix starts at 1.30.0.
+- `opentelemetry-api`: CVE-2026-114603; fixed in 1.45.1.
+
+`pip-audit` of that environment and GitHub's global advisory API confirmed the
+findings. This is a dependency finding, not proof that PARK's scan invocation
+reaches the vulnerable paths. The gate's snapshot scan and validation-environment
+audit do not audit the separately installed scanner's Python dependencies.
+The updated validation environment had no known findings; that result must not
+be generalized to the scanner environment or called vulnerability-free.
+
+A zero-known-findings claim remains false. The owner approved a
+[scoped acceptance](security/SCANNER_REACHABILITY.md) after source tracing,
+independent automated review and instrumented tests found these five paths
+unreachable through this gate's local scan. It expires on 2026-12-04 or a relevant
+tool/configuration change, whichever comes first. Other Semgrep modes and uses
+are excluded. Do not force incompatible dependency overrides, suppress findings
+or treat scanner recency as clearance. Repository Dependabot alerts were
+unavailable (disabled), so audit evidence comes from direct scans and public
+advisories, not a clean alerts page.
+This decision belongs to the PARK source repository and does not authorize risk
+acceptance in generated projects.
+
+Before relying on this acceptance, put the reviewed scanner environment's `bin`
+directory first on PATH. Verify that **both** `semgrep` and `pysemgrep` resolve
+there and report 1.183.0. The gate checks `semgrep`'s version but cannot prove the
+identity of its PATH-selected Python fallback; mixed installations invalidate
+the assessment. Preserve the local-scan argv and sanitized environment, and rerun
+the documented optional probe when reassessing the installation.
+
+### Snapshot scan coverage
 
 `semgrep.yml` is a committed, reviewed small ruleset covering high-confidence Python command/deserialization hazards, JavaScript/TypeScript dynamic execution and TLS verification, Go shell/TLS hazards, shell TLS bypasses, workflow insecure Node overrides and Terraform TLS bypasses. Language-specific AST rules are used where supported; generic shell/workflow/HCL rules deliberately have narrower coverage. Rules are local; no mutable registry rules are downloaded. Inline Semgrep suppression and repository ignore files cannot hide findings. Any reported parser/analysis error fails the gate. This ruleset is not an exhaustive vulnerability audit.
 

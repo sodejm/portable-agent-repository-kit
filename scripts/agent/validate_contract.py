@@ -18,6 +18,13 @@ REQUIRED = (
     ".github/workflows/owner-review-gate.yml",
     ".github/workflows/review-event-notification.yml",
     ".agents/skills",
+    ".agents/skills/clear-writing/SKILL.md",
+    ".agents/skills/clear-writing/references/source-documentation.md",
+    ".agents/skills/clear-writing/references/provenance.md",
+    "docs/CODE_DOCUMENTATION.md",
+    ".agents/code-documentation.json",
+    ".agents/code-documentation-baseline.json",
+    "scripts/agent/check_code_documentation.py",
     "docs/COMPATIBILITY.md",
     "docs/SECURITY_MODEL.md",
 )
@@ -34,6 +41,7 @@ MARKDOWN_REFERENCE = re.compile(
 
 
 def frontmatter(path: Path) -> dict[str, str]:
+    """Read flat skill metadata, raising ValueError for missing delimiters."""
     lines = path.read_text(encoding="utf-8").splitlines()
     if not lines or lines[0] != "---":
         raise ValueError("missing opening YAML frontmatter delimiter")
@@ -50,6 +58,7 @@ def frontmatter(path: Path) -> dict[str, str]:
 
 
 def validate_skills(errors: list[str]) -> None:
+    """Append violations of canonical skill layout and required metadata."""
     skills = ROOT / ".agents" / "skills"
     if not skills.is_dir():
         return
@@ -71,6 +80,7 @@ def validate_skills(errors: list[str]) -> None:
 
 
 def validate_portability(errors: list[str]) -> None:
+    """Report home-directory paths without printing their private contents."""
     for path in ROOT.rglob("*"):
         if not path.is_file() or ".git" in path.parts or ".claude" in path.parts:
             continue
@@ -126,6 +136,7 @@ def validate_markdown_links(errors: list[str]) -> None:
 
 
 def main() -> int:
+    """Return one for contract violations, otherwise report the skill count."""
     errors: list[str] = []
     for relative in REQUIRED:
         if not (ROOT / relative).exists():

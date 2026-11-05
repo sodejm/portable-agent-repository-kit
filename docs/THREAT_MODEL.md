@@ -61,6 +61,25 @@ account and credential recipient rather than only their user-supplied labels.
 - `scripts/agent/sync_adapters.py`: inspect at the baseline revision; evidence scope is limited to this component.
 - `tests/test_template.py`: inspect at the baseline revision; evidence scope is limited to this component.
 - `docs/SECURITY_MODEL.md`: inspect at the baseline revision; evidence scope is limited to this component.
+- `.agents/skills/clear-writing/` and its generated adapter: portable writing
+  instructions and original attributed guidance; no added command, network or
+  credential authority. Contract and generation tests check resource presence,
+  not prose quality or actual agent invocation. T03 still applies to instruction
+  integrity; human review remains pending.
+- `scripts/agent/check_code_documentation.py`, its policy/baseline and behavioral
+  tests: offline AST inspection adds a read-only source/configuration boundary.
+  The checker rejects malformed schemas, duplicate JSON keys, unsafe relative
+  paths, unregistered source symlinks, oversized inputs and parse errors. Registered
+  directory aliases must resolve to exact in-root canonical directories that remain
+  checked; excluded or chained targets are rejected. It does not execute inspected
+  code or print source bodies, including through Python parser warnings. Tests cover
+  those negative boundaries,
+  unchanged versus changed legacy content, and generated repositories without Git.
+  A local actor racing filesystem checks remains outside the trusted stable
+  workspace assumption; the checks are not a sandbox or concurrent filesystem
+  security primitive. Baseline/policy changes can weaken coverage and require
+  review. Structural success does not establish prose accuracy or other-language
+  coverage. No network, credential or deployment authority is added.
 - `.github/review-policy.json`, `.github/workflows/owner-review-gate.yml`,
   `.github/workflows/review-event-notification.yml`, and
   `scripts/ci/review_gate.py`: owner-review trust boundary introduced after the
@@ -134,6 +153,27 @@ validation before the affected release/capability expansion and schedule P2 with
 - Attack path / prerequisite: Copied workflow or dependency fetch executes untrusted supply-chain content.
 - Inherent impact: High; likelihood: Medium; priority: P1.
 - Existing evidence / limitation: Local contract and adapter checks exist; they are not a provenance proof.
+- Scanner maintenance: the pre-push policy requires upstream stable-release
+  verification before pushing, reviewed pin/test/doc updates and trusted-gate
+  refresh. The optional gate pins Semgrep 1.183.0 and Trivy 0.76.1; no rule,
+  severity threshold, bypass or token permission changes accompany this refresh.
+  Release recency is not evidence that a tool or transitive dependency is secure.
+- Dependency refresh (2026-11-04): optional validation uses Ruff 0.17.3 and
+  Coverage 7.17.2 (Python >=3.11); Build 1.6.1 and pip-audit 2.10.1 remain current.
+  Workflow actions are pinned to verified release commits for checkout v7.0.1
+  and setup-python v7.1.0, reducing mutable-tag exposure without changing token
+  permissions. Vulnerability scans describe known findings at scan time, not a
+  guarantee of vulnerability-free dependencies or upstream action bundles.
+- Accepted scoped risk: a separate audit of Semgrep 1.183.0's Python environment found
+  five medium-severity CVEs in its constrained MCP and OpenTelemetry dependencies.
+  Source tracing, independent automated review and a real instrumented scan found
+  the affected paths unreachable in this gate's local-scan mode. The owner
+  explicitly approved the [bounded acceptance](security/SCANNER_REACHABILITY.md)
+  on 2026-11-04, expiring 2026-12-04 or on a relevant tool/configuration change.
+  The maintainer owns reassessment/remediation; the reviewed executable/fallback
+  installation, fixed argv and sanitized environment are required. Other modes
+  and hostile local state are excluded. No vulnerability-free claim, CVE
+  suppression, incompatible override or independent human code review is implied.
 - Proposed mitigation and validation: Inventory actions and downloaded tools; pin/review sources, restrict token permissions and verify release provenance.
 - Residual risk / status: unverified; human review and evidence pending. Retain
   this entry until a reviewer records outcome, exact revision and remaining risk.

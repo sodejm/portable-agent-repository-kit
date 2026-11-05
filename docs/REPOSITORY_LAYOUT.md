@@ -75,7 +75,9 @@ Both paths use the same rendering and validation logic:
 
 The resulting repository keeps the portable agent contract, skills, adapters,
 documentation, CI, and checks. It does not keep PARK's project generator, generator
-tests, license templates, template-only project-creator skill, or template marker.
+tests, license templates, template-only project-creator skill, template marker,
+or PARK-specific implementation plans/specifications under `docs/superpowers/`.
+Those plans contain PARK task and approval context, not consumer instructions.
 
 The included `agent-workboard` skill writes coordination state beside Git's common
 directory (or in a local agent-state directory outside Git for non-Git projects).
