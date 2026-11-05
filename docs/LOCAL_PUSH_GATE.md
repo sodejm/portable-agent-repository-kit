@@ -52,7 +52,7 @@ an agent workflow requirement, not a claim that the hook queries upstream releas
 
 ## Security rules and reproducibility
 
-### Scanner dependency audit blocker (2026-11-04)
+### Scanner dependency findings and scoped acceptance (2026-11-04)
 
 The separately installed Semgrep 1.183.0 Python environment has five known
 medium-severity advisories. Its metadata requires `mcp==1.29.0` and
@@ -69,11 +69,24 @@ audit do not audit the separately installed scanner's Python dependencies.
 The updated validation environment had no known findings; that result must not
 be generalized to the scanner environment or called vulnerability-free.
 
-A zero-known-findings delivery remains blocked pending a compatible upstream
-Semgrep release or a separately reviewed and validated remediation. Do not force
-incompatible dependency overrides, suppress findings or treat scanner recency as
-clearance. Repository Dependabot alerts were unavailable (disabled), so this
-evidence comes from direct scans and public advisories, not a clean alerts page.
+A zero-known-findings claim remains false. The owner approved a
+[scoped acceptance](security/SCANNER_REACHABILITY.md) after source tracing,
+independent automated review and instrumented tests found these five paths
+unreachable through this gate's local scan. It expires on 2026-12-04 or a relevant
+tool/configuration change, whichever comes first. Other Semgrep modes and uses
+are excluded. Do not force incompatible dependency overrides, suppress findings
+or treat scanner recency as clearance. Repository Dependabot alerts were
+unavailable (disabled), so audit evidence comes from direct scans and public
+advisories, not a clean alerts page.
+This decision belongs to the PARK source repository and does not authorize risk
+acceptance in generated projects.
+
+Before relying on this acceptance, put the reviewed scanner environment's `bin`
+directory first on PATH. Verify that **both** `semgrep` and `pysemgrep` resolve
+there and report 1.183.0. The gate checks `semgrep`'s version but cannot prove the
+identity of its PATH-selected Python fallback; mixed installations invalidate
+the assessment. Preserve the local-scan argv and sanitized environment, and rerun
+the documented optional probe when reassessing the installation.
 
 ### Snapshot scan coverage
 

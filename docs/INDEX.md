@@ -18,3 +18,4 @@
 
 - [Goblin Council](../extensions/goblin-council/README.md): optional Codex orchestration, supported models, setup, and recovery.
 - [Local push gate](LOCAL_PUSH_GATE.md): optional exact-commit validation, prerequisites, and policy reconciliation.
+- [Scanner CVE reachability](security/SCANNER_REACHABILITY.md): scoped local-scan acceptance, evidence, expiry and remediation triggers.

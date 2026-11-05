@@ -164,12 +164,16 @@ validation before the affected release/capability expansion and schedule P2 with
   and setup-python v7.1.0, reducing mutable-tag exposure without changing token
   permissions. Vulnerability scans describe known findings at scan time, not a
   guarantee of vulnerability-free dependencies or upstream action bundles.
-- Open blocker: a separate audit of Semgrep 1.183.0's Python environment found
+- Accepted scoped risk: a separate audit of Semgrep 1.183.0's Python environment found
   five medium-severity CVEs in its constrained MCP and OpenTelemetry dependencies.
-  See [scanner audit evidence](LOCAL_PUSH_GATE.md#scanner-dependency-audit-blocker-2026-11-04).
-  The maintainer must reconcile a compatible remediation before claiming
-  zero-known-findings delivery; exposure through PARK's scan path is unproven,
-  and no risk acceptance or incompatible override has been authorized.
+  Source tracing, independent automated review and a real instrumented scan found
+  the affected paths unreachable in this gate's local-scan mode. The owner
+  explicitly approved the [bounded acceptance](security/SCANNER_REACHABILITY.md)
+  on 2026-11-04, expiring 2026-12-04 or on a relevant tool/configuration change.
+  The maintainer owns reassessment/remediation; the reviewed executable/fallback
+  installation, fixed argv and sanitized environment are required. Other modes
+  and hostile local state are excluded. No vulnerability-free claim, CVE
+  suppression, incompatible override or independent human code review is implied.
 - Proposed mitigation and validation: Inventory actions and downloaded tools; pin/review sources, restrict token permissions and verify release provenance.
 - Residual risk / status: unverified; human review and evidence pending. Retain
   this entry until a reviewer records outcome, exact revision and remaining risk.

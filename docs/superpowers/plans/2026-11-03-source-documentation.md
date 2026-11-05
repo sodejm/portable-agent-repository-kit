@@ -217,5 +217,29 @@ project-specific legacy inventory where needed, exact validation and merge state
   threat model. Repository Dependabot alerts are disabled; the required GitHub
   security MCP integration is unavailable, so direct CLI/public-advisory checks
   were used instead.
-- No ready-PR or zero-known-findings claim is justified. Do not force incompatible
-  overrides or open a ready PR before a compatible remediation is validated.
+- At that checkpoint, ready-PR delivery was blocked. The reachability follow-up
+  below records the later owner decision; a zero-known-findings claim remains
+  false and incompatible overrides remain prohibited.
+
+### Reachability and owner acceptance (2026-11-04)
+
+- The user requested a reachability analysis and explicitly selected “Accept
+  scoped exception” after receiving the result and limits. The five affected
+  paths are not reachable through the reviewed local-scan gate configuration.
+  Independent Opus 5.5/high source review agreed; this is not human code review.
+- The acceptance is recorded in
+  [Scanner CVE reachability](../../security/SCANNER_REACHABILITY.md), bound to the
+  exact gate source and scanner versions, with a 2026-12-04 deadline and earlier
+  invalidation on relevant changes. The maintainer owns remediation. MCP/server,
+  CI and tracing-enabled modes, mixed installations and other projects are excluded.
+- Two dependency-free tests preserve the actual argv and environment allowlist.
+  The opt-in real native-dispatch/Python-fallback test passed on arm64 macOS and
+  Python 3.14.9: each positive control was observed in a separate process; the
+  scan ran with tracing disabled and zero calls to ten monitored entries covering
+  the five advisories. Review corrections expanded client-transport coverage,
+  asserted the complete scanner call list and rejected multiple fallback reports.
+  Both actual scanner executables resolved to the reviewed installation and
+  reported 1.183.0. CVEs remain visible; no suppression or dependency override.
+- `make check` passed with 82 root, 48 skill and 26 extension tests. The ordinary
+  run skips the optional real-scanner probe and OS sandbox integration; the
+  real-scanner probe was run separately and passed all three tests.
