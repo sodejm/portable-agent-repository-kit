@@ -195,3 +195,27 @@ project-specific legacy inventory where needed, exact validation and merge state
 - Merge constraint: the remote requires linear history and disallows merge
   commits. The request for explicit squash permission was dismissed; do not
   rewrite checkpoint history or bypass rules to merge.
+
+### Dependency-refresh follow-up (2026-11-04)
+
+- The user requested current dependencies with no CVEs before opening a ready
+  PR. Scope remains PARK, not the six policy-only worktrees.
+- PyPI and official release metadata identify Ruff 0.17.3 and Coverage 7.17.2 as
+  current; pins and guidance are updated. Build 1.6.1, pip-audit 2.10.1, Semgrep
+  1.183.0 and Trivy 0.76.1 remain current. Coverage raises only the optional gate's
+  Python prerequisite to 3.11. Both workflow actions use verified release SHAs
+  for checkout v7.0.1 and setup-python v7.1.0.
+- `make check` passed: 79 root, 48 skill and 26 extension tests, one existing
+  sandbox skip. `actionlint` passed. Updated Ruff lint/format checks passed;
+  Coverage 7.17.2 ran all 79 root tests successfully. The isolated validation
+  environment's `pip-audit` found no known vulnerabilities. GitHub's reviewed and
+  malware advisory queries returned no matches for the two action versions.
+- Expanded auditing found five medium-severity CVEs in Semgrep's separately
+  installed Python dependencies. Its declared constraints exclude patched MCP
+  and OpenTelemetry versions. The local gate's earlier pass did not audit that
+  environment. Findings and evidence limits are recorded in the gate guide and
+  threat model. Repository Dependabot alerts are disabled; the required GitHub
+  security MCP integration is unavailable, so direct CLI/public-advisory checks
+  were used instead.
+- No ready-PR or zero-known-findings claim is justified. Do not force incompatible
+  overrides or open a ready PR before a compatible remediation is validated.
