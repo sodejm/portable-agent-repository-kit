@@ -1,8 +1,8 @@
 {
   "default_branch": "main",
   "tools": {
-    "semgrep": "1.183.0",
-    "trivy": "0.76.1"
+    "semgrep": "1.186.0",
+    "trivy": "0.76.2"
   },
   "test_areas": [
     {

@@ -47,7 +47,7 @@ calls in this process and newly created Python threads, not native subprocesses.
 """
     from importlib.metadata import version
 
-    expected = {"semgrep": "1.183.0", "mcp": "1.29.0", "opentelemetry-api": "1.37.0"}
+    expected = {"semgrep": "1.186.0", "mcp": "1.29.0", "opentelemetry-api": "1.37.0"}
     if {name: version(name) for name in expected} != expected:
         raise RuntimeError("Scanner dependency versions changed; reassess before profiling")
     counts = dict.fromkeys(SINKS.values(), 0)
