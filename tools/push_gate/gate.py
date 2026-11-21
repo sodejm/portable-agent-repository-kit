@@ -22,6 +22,7 @@ import time
 from pathlib import Path
 
 SOURCE = "tools/push_gate"
+SEMGREP_IGNORE = ".park-semgrep-ignore"
 
 
 class GateError(RuntimeError):
@@ -235,6 +236,7 @@ def executable_test(path, before, after):
     if path.endswith(".py"):
 
         def assertions(source):
+            """Collect assertion syntax while ignoring comments and formatting."""
             try:
                 parsed = ast.parse(source)
             except (SyntaxError, ValueError):
@@ -272,6 +274,7 @@ def test_development(root, base, sha, policy):
     changed = [name for name in changed if name]
 
     def blob(revision, path):
+        """Read committed test content, treating a missing prior file as empty."""
         result = subprocess.run(
             ["git", "show", f"{revision}:{path}"],
             cwd=root,
@@ -319,32 +322,68 @@ def test_development(root, base, sha, policy):
 
 
 def scanner_run(argv, snapshot, env, report_path, findings_key):
-    """Expose useful identifiers without printing matched source or secret bytes."""
-    result = subprocess.run(
-        argv,
-        cwd=snapshot,
-        env=env,
-        stdin=subprocess.DEVNULL,
-        capture_output=True,
-        check=False,
-    )
-    if report_path.exists():
-        report = json.loads(report_path.read_text())
+    """Persist native stdout JSON and reject missing or malformed scanner reports.
+
+    Trivy writes its own report. Diagnostics expose only escaped IDs and paths;
+    raw scanner output, parse exceptions and matched source stay private.
+    """
+    try:
+        result = subprocess.run(
+            argv,
+            cwd=snapshot,
+            env=env,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise GateError("Cannot launch scanner") from exc
+    try:
         if findings_key == "results":
-            for finding in report.get("results", []):
+            report_path.write_bytes(result.stdout)
+        report = json.loads(report_path.read_bytes())
+        if not isinstance(report, dict) or not isinstance(report[findings_key], list):
+            raise ValueError
+        if findings_key == "results":
+            if not isinstance(report["errors"], list):
+                raise ValueError
+            for finding in report["results"]:
+                if not all(
+                    isinstance(finding[key], str) for key in ("check_id", "path")
+                ):
+                    raise ValueError
                 print(
-                    "Semgrep: " + finding["check_id"] + " " + finding["path"],
+                    "Semgrep: "
+                    + diagnostic(finding["check_id"])
+                    + " "
+                    + diagnostic(finding["path"]),
                     file=sys.stderr,
                 )
-            for error in report.get("errors", []):
+            for error in report["errors"]:
+                if not isinstance(error, dict):
+                    raise ValueError
                 print(
-                    "Semgrep analysis error: " + str(error.get("path", "unknown path")),
+                    "Semgrep analysis error: "
+                    + diagnostic(error.get("path", "unknown path")),
                     file=sys.stderr,
                 )
         else:
-            for target in report.get("Results", []):
-                for kind in ("Vulnerabilities", "Secrets", "Misconfigurations"):
+            for target in report["Results"]:
+                if not isinstance(target, dict):
+                    raise ValueError
+                for kind in (
+                    "Vulnerabilities",
+                    "Secrets",
+                    "Misconfigurations",
+                    "ExperimentalModifiedFindings",
+                ):
+                    if not isinstance(target.get(kind, []), list):
+                        raise ValueError
                     for item in target.get(kind, []):
+                        if not isinstance(item, dict) or not isinstance(
+                            item.get("Severity"), str
+                        ):
+                            raise ValueError
                         if (
                             item.get("Severity") in ("HIGH", "CRITICAL")
                             and item.get("Status") != "PASS"
@@ -355,25 +394,61 @@ def scanner_run(argv, snapshot, env, report_path, findings_key):
                             )
                             print(
                                 "Trivy: "
-                                + identifier
+                                + diagnostic(identifier)
                                 + " "
-                                + target.get("Target", "unknown path"),
+                                + diagnostic(target.get("Target", "unknown path")),
                                 file=sys.stderr,
                             )
-    else:
-        raise GateError(
-            "Scanner produced no report; check installation and network access"
-        )
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise GateError("Scanner produced missing or malformed JSON report") from exc
     if result.returncode:
         raise GateError(
-            f"{argv[0]} failed (exit {result.returncode}); findings above or scanner error"
+            f"Scanner failed (exit {result.returncode}); findings above or scanner error"
         )
     return report
 
 
+def diagnostic(value):
+    """Escape control characters in scanner identifiers without exposing raw output."""
+    return json.dumps(str(value), ensure_ascii=True)
+
+
+def native_scanner(env):
+    """Require the scan entry point to be the same installed engine inode.
+
+    This rejects an old Python launcher or a different osemgrep installation on
+    PATH. Trusted local tools and their parent directories remain prerequisites.
+    """
+    core = shutil.which("semgrep-core", path=env.get("PATH", ""))
+    scanner = shutil.which("osemgrep", path=env.get("PATH", ""))
+    try:
+        if core and scanner and os.path.samefile(core, scanner):
+            return str(Path(scanner).absolute())
+    except OSError:
+        pass
+    raise GateError(
+        "Require semgrep-core and osemgrep from the same native installation"
+    )
+
+
 def scanners(snapshot, files, policy, env, temporary):
     """Run pinned scanners with local rules and no repository suppression files."""
-    for tool in ("semgrep", "trivy"):
+    # macOS may resolve case aliases to the same native ignore basename.
+    if any(
+        part.casefold() == SEMGREP_IGNORE for name in files for part in Path(name).parts
+    ):
+        raise GateError("Reserved Semgrep ignore path in committed tree")
+    # The raw engine probe cannot dispatch to the Python CLI, unlike --version
+    # through osemgrep. Require an exact version, not a substring in wrapper prose.
+    native_version = run(["semgrep-core", "-version"], snapshot, env=env).strip()
+    version = re.escape(policy["tools"]["semgrep"].encode())
+    if not re.fullmatch(
+        rb"semgrep-core version: " + version + rb" \([0-9a-f]{10}\)", native_version
+    ):
+        raise GateError(
+            "Required native Semgrep version: " + policy["tools"]["semgrep"]
+        )
+    for tool in ("trivy",):
         output = run([tool, "--version"], snapshot, env=env).decode()
         if not re.search(
             r"(?<![\d.])" + re.escape(policy["tools"][tool]) + r"(?![\d.])", output
@@ -383,6 +458,7 @@ def scanners(snapshot, files, policy, env, temporary):
         data = (snapshot / name).read_bytes()
         if re.search(rb"(?m)^\s*(?:#|//|/\*)\s*trivy:\s*ignore", data):
             raise GateError(f"Inline Trivy suppression must be resolved: {name}")
+    scanner = native_scanner(env)
     targets = [
         "./" + name
         for name in files
@@ -401,13 +477,18 @@ def scanners(snapshot, files, policy, env, temporary):
             ".hcl",
         )
     ]
-    empty_ignore = temporary / "empty-semgrep-ignore"
+    # Native Semgrep requires a basename and checks it in nested directories.
+    # No committed component may use it; create the sole empty file ourselves.
+    empty_ignore = snapshot / SEMGREP_IGNORE
+    if empty_ignore.exists() or empty_ignore.is_symlink():
+        raise GateError("Reserved Semgrep ignore path already exists")
     empty_ignore.write_text("")
     semgrep_report = temporary / "semgrep.json"
     report = scanner_run(
         [
-            "semgrep",
+            scanner,
             "scan",
+            "--experimental",
             "--config",
             str(snapshot / SOURCE / "semgrep.yml"),
             "--strict",
@@ -418,10 +499,8 @@ def scanners(snapshot, files, policy, env, temporary):
             "--no-git-ignore",
             "--max-target-bytes=0",
             "--x-semgrepignore-filename",
-            str(empty_ignore),
+            SEMGREP_IGNORE,
             "--json",
-            "--output",
-            str(semgrep_report),
             *targets,
         ],
         snapshot,
@@ -432,6 +511,7 @@ def scanners(snapshot, files, policy, env, temporary):
     if report.get("errors") or report.get("results"):
         raise GateError("Semgrep findings or incomplete analysis")
     trivy_report = temporary / "trivy.json"
+    empty_ignore.unlink()
     report = scanner_run(
         [
             "trivy",
