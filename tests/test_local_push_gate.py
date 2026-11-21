@@ -12,6 +12,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -25,6 +26,7 @@ class PolicyTests(unittest.TestCase):
     """Exercise closed policy and meaningful assertion detection."""
 
     def test_assertions_must_change(self):
+        """Require changed assertions rather than comments or deleted tests."""
         self.assertFalse(
             GATE.executable_test(
                 "test_a.py", "assert x == 1", "# comment\nassert x == 1"
@@ -37,6 +39,7 @@ class PolicyTests(unittest.TestCase):
         self.assertTrue(GATE.executable_test("a.test.ts", "", "expect(result).toBe(2)"))
 
     def test_unsupported_and_default_updates_fail(self):
+        """Reject default-branch updates, tags and deletions before execution."""
         sha = "a" * 40
         for target, revision in (
             ("refs/heads/main", sha),
@@ -54,10 +57,12 @@ class PolicyTests(unittest.TestCase):
         )
 
     def test_absent_executable_fails_closed(self):
+        """A missing prerequisite must raise the gate's controlled failure."""
         with self.assertRaises(GATE.GateError):
             GATE.run(["push-gate-deliberately-absent-2fcb63a7"], ROOT)
 
     def test_terraform_assertions_must_change(self):
+        """Distinguish executable Terraform assertions from comment-only edits."""
         self.assertFalse(
             GATE.executable_test(
                 "main.tftest.hcl", "condition = true", "# note\ncondition = true"
@@ -70,6 +75,7 @@ class PolicyTests(unittest.TestCase):
         )
 
     def test_inherited_overrides_removed(self):
+        """Caller scanner settings must not weaken the trusted policy."""
         os.environ["TRIVY_SKIP_FILES"] = "*"
         os.environ["SEMGREP_RULES"] = "unreviewed"
         try:
@@ -80,6 +86,213 @@ class PolicyTests(unittest.TestCase):
             del os.environ["SEMGREP_RULES"]
 
 
+class NativeScannerTests(unittest.TestCase):
+    """Protect native dispatch, reserved ignores and complete report handling."""
+
+    def test_native_entrypoints_must_share_the_engine(self):
+        """Reject missing names and a separate launcher despite matching versions."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            core = root / "semgrep-core"
+            scanner = root / "osemgrep"
+            core.write_text("native fixture")
+            core.chmod(0o755)
+            env = {"PATH": str(root)}
+            with self.assertRaises(GATE.GateError):
+                GATE.native_scanner(env)
+            os.link(core, scanner)
+            self.assertEqual(GATE.native_scanner(env), str(scanner))
+            scanner.unlink()
+            shutil.copyfile(core, scanner)
+            scanner.chmod(0o755)
+            with self.assertRaises(GATE.GateError):
+                GATE.native_scanner(env)
+
+    def test_reserved_ignore_rejected_at_every_depth(self):
+        """Reject committed ignore names and case aliases before launching tools."""
+        for name in (
+            ".park-semgrep-ignore",
+            "sub/.park-semgrep-ignore",
+            "a/b/.park-semgrep-ignore/hidden.py",
+            ".PARK-SEMGREP-IGNORE",
+            "sub/.Park-Semgrep-Ignore",
+            "a/b/.pArK-sEmGrEp-IgNoRe/hidden.py",
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("*\n")
+                with (
+                    patch.object(GATE, "run") as run,
+                    patch.object(GATE, "scanner_run") as scan,
+                ):
+                    with self.assertRaisesRegex(
+                        GATE.GateError, "Reserved Semgrep ignore"
+                    ):
+                        GATE.scanners(root, [name], {"tools": {}}, {}, root)
+                    run.assert_not_called()
+                    scan.assert_not_called()
+
+    def test_raw_native_version_requires_exact_output(self):
+        """Version prose or another version must fail before any scan."""
+        policy = {"tools": {"semgrep": "1.186.0", "trivy": "0.76.2"}}
+        for output in (b"1.186.0 extra", b"1.186.00", b"wrapper 1.186.0", b"1.185.0"):
+            with (
+                self.subTest(output=output),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                with patch.object(GATE, "run", return_value=output) as run:
+                    with self.assertRaises(GATE.GateError):
+                        GATE.scanners(Path(temporary), [], policy, {}, Path(temporary))
+                    self.assertEqual(
+                        run.call_args.args[0], ["semgrep-core", "-version"]
+                    )
+
+    def test_stdout_reports_fail_closed_and_stay_private(self):
+        """Missing, malformed and structurally incomplete JSON cannot pass."""
+        for payload in (
+            b"",
+            b"private-token",
+            b"[]",
+            b"{}",
+            b'{"results": []}',
+            b'{"results": [], "errors": null}',
+        ):
+            with (
+                self.subTest(payload=payload),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                root = Path(temporary)
+                result = subprocess.CompletedProcess([], 0, payload, b"private-token")
+                with patch.object(GATE.subprocess, "run", return_value=result):
+                    with self.assertRaises(GATE.GateError) as failure:
+                        GATE.scanner_run(
+                            ["osemgrep"], root, {}, root / "report.json", "results"
+                        )
+                    self.assertNotIn("private-token", str(failure.exception))
+
+    def test_inline_trivy_suppression_still_blocks(self):
+        """Native migration cannot permit repository inline suppressions."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "sample.tf").write_text("# trivy:ignore:AVD-SYNTHETIC\n")
+            with patch.object(
+                GATE,
+                "run",
+                side_effect=[b"semgrep-core version: 1.186.0 (e7f7148977)", b"0.76.2"],
+            ):
+                with self.assertRaisesRegex(GATE.GateError, "Inline Trivy suppression"):
+                    GATE.scanners(
+                        root,
+                        ["sample.tf"],
+                        {"tools": {"semgrep": "1.186.0", "trivy": "0.76.2"}},
+                        {},
+                        root,
+                    )
+
+    def test_findings_and_analysis_errors_block_even_on_zero_exit(self):
+        """A scanner exit code cannot override findings in either report format."""
+        reports = [
+            {"results": [{"check_id": "test-rule", "path": "input.py"}], "errors": []},
+            {"results": [], "errors": [{"path": "input.py"}]},
+            {
+                "Results": [
+                    {
+                        "Target": "input.tf",
+                        "ExperimentalModifiedFindings": [
+                            {"Severity": "HIGH", "ID": "suppressed-test-rule"}
+                        ],
+                    }
+                ]
+            },
+        ]
+        policy = {"tools": {"semgrep": "1.186.0", "trivy": "0.76.2"}}
+        for report in reports:
+            with (
+                self.subTest(report=report),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                root = Path(temporary)
+
+                def scan(argv, snapshot, env, path, key, candidate=report):
+                    """Return the candidate finding after an empty preceding scan."""
+                    if key == "results" and "Results" in candidate:
+                        return {"results": [], "errors": []}
+                    return candidate
+
+                with (
+                    patch.object(
+                        GATE,
+                        "run",
+                        side_effect=[
+                            b"semgrep-core version: 1.186.0 (e7f7148977)",
+                            b"0.76.2",
+                        ],
+                    ),
+                    patch.object(GATE, "native_scanner", return_value="osemgrep"),
+                    patch.object(GATE, "scanner_run", side_effect=scan),
+                ):
+                    with self.assertRaises(GATE.GateError):
+                        GATE.scanners(root, [], policy, {}, root)
+
+    def test_trivy_missing_and_malformed_reports_block(self):
+        """Trivy must write a structurally valid report even after a zero exit."""
+        for report in (
+            None,
+            [],
+            {},
+            {"Results": None},
+            {"Results": [None]},
+            {"Results": [{"Secrets": [{"Severity": None}]}]},
+        ):
+            with (
+                self.subTest(report=report),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                root = Path(temporary)
+                path = root / "trivy.json"
+                if report is not None:
+                    path.write_text(json.dumps(report))
+                result = subprocess.CompletedProcess(
+                    [], 0, b"private-token", b"private-token"
+                )
+                with patch.object(GATE.subprocess, "run", return_value=result):
+                    with self.assertRaises(GATE.GateError) as failure:
+                        GATE.scanner_run(["trivy"], root, {}, path, "Results")
+                    self.assertNotIn("private-token", str(failure.exception))
+
+    def test_stdout_report_persisted_and_diagnostics_escaped(self):
+        """Save native JSON without printing source text or terminal controls."""
+        report = {
+            "results": [
+                {
+                    "check_id": "rule\nspoof",
+                    "path": "input\x1b.py",
+                    "extra": {"lines": "private-token"},
+                }
+            ],
+            "errors": [],
+        }
+        payload = json.dumps(report).encode()
+        result = subprocess.CompletedProcess([], 0, payload, b"private-token")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "semgrep.json"
+            with (
+                patch.object(GATE.subprocess, "run", return_value=result),
+                patch("sys.stderr") as stderr,
+            ):
+                self.assertEqual(
+                    GATE.scanner_run(["osemgrep"], root, {}, path, "results"), report
+                )
+            self.assertEqual(path.read_bytes(), payload)
+            output = "".join(call.args[0] for call in stderr.write.call_args_list)
+            self.assertNotIn("private-token", output)
+            self.assertIn(r"rule\nspoof", output)
+            self.assertIn(r"input\u001b.py", output)
+
+
 class RemoteTests(unittest.TestCase):
     """Disposable remotes prove nonzero gates prevent remote updates.
 
@@ -87,6 +300,7 @@ class RemoteTests(unittest.TestCase):
     """
 
     def setUp(self):
+        """Install fixture policy and scanner doubles in a disposable local repo."""
         self.directory = tempfile.TemporaryDirectory(prefix="push-gate-test-")
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
@@ -142,25 +356,30 @@ class RemoteTests(unittest.TestCase):
         scanner = """#!/usr/bin/env python3
 import json,pathlib,sys
 name=pathlib.Path(sys.argv[0]).name
-if '--version' in sys.argv:
- print('1.181.0' if name=='semgrep' else 'Version: 0.76.0');sys.exit(0)
+if '-version' in sys.argv or '--version' in sys.argv:
+ print('semgrep-core version: 1.181.0 (0123456789)' if name=='semgrep-core' else 'Version: 0.76.0');sys.exit(0)
 assert not pathlib.Path('private-untracked.txt').exists()
 assert pathlib.Path('committed-only.py').exists()
-report=pathlib.Path(sys.argv[sys.argv.index('--output')+1])
-data = {'results': [], 'errors': []} if name=='semgrep' else {'Results': []}
-report.write_text(json.dumps(data))
+if name=='osemgrep':
+ print(json.dumps({'results': [], 'errors': []}))
+ name='semgrep'
+else:
+ report=pathlib.Path(sys.argv[sys.argv.index('--output')+1])
+ report.write_text(json.dumps({'Results': []}))
 if pathlib.Path(name+'-fail').exists(): sys.exit(1)
 """
-        for name in ("semgrep", "trivy"):
+        for name in ("semgrep-core", "trivy"):
             path = self.bin / name
             path.write_text(scanner)
             path.chmod(0o755)
+        os.link(self.bin / "semgrep-core", self.bin / "osemgrep")
         self.command(sys.executable, "tools/push_gate/gate.py", "install")
         (self.repo / "private-untracked.txt").write_text(
             "PRIVATE LOCAL DATA MUST NEVER BE SCANNED\n"
         )
 
     def command(self, *argv, cwd=None, success=True):
+        """Run a fixture command and require success unless failure is the subject."""
         result = subprocess.run(
             argv, cwd=cwd or self.repo, env=self.env, capture_output=True, check=False
         )
@@ -171,16 +390,19 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         return result
 
     def commit(self, message):
+        """Record fixture changes while keeping the private untracked canary out."""
         self.command("git", "add", "--", ".", ":(exclude)private-untracked.txt")
         self.command("git", "commit", "--quiet", "--allow-empty", "-m", message)
         return self.command("git", "rev-parse", "HEAD").stdout.strip()
 
     def remote_tip(self):
+        """Read the disposable remote's tested branch without modifying it."""
         return self.command(
             "git", "ls-remote", "origin", "refs/heads/feature/gate"
         ).stdout
 
     def test_success_uses_pushed_commit_with_dirty_worktree(self):
+        """Dirty implementation content must not replace the pushed snapshot."""
         sha = self.commit("successful fixture")
         (self.repo / "implementation.py").write_text(
             "raise RuntimeError('dirty file must not run')\n"
@@ -189,6 +411,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertIn(sha, self.remote_tip())
 
     def test_push_validates_selected_commit_when_head_differs(self):
+        """Validate the explicitly pushed SHA even when HEAD would fail checks."""
         selected = self.commit("selected good commit").decode()
         (self.repo / "implementation.py").write_text("VALUE = 2\n")
         self.commit("bad HEAD that is not being pushed")
@@ -198,6 +421,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertIn(selected.encode(), self.remote_tip())
 
     def test_nonbehavioral_exemption_requires_exact_hashes(self):
+        """Accept reviewed equivalent content and reject a stale exemption."""
         original = (self.repo / "implementation.py").read_text()
         changed = original.rstrip() + "  # documented equivalent comment\n"
         (self.repo / "implementation.py").write_text(changed)
@@ -224,6 +448,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertEqual(self.remote_tip(), original_tip)
 
     def test_checks_and_scanners_prevent_remote_update(self):
+        """Each scanner and canonical-check failure must preserve the remote tip."""
         self.command("git", "push", "--quiet", "origin", "feature/gate")
         original = self.remote_tip()
         for name in ("semgrep", "trivy"):
@@ -247,12 +472,35 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.remote_tip(), original)
 
+    def test_reserved_ignore_case_aliases_prevent_remote_update(self):
+        """Mixed-case file and directory aliases must preserve the remote tip."""
+        self.command("git", "push", "--quiet", "origin", "feature/gate")
+        original = self.remote_tip()
+        for name in (
+            ".PARK-SEMGREP-IGNORE",
+            "sub/.Park-Semgrep-Ignore",
+            "a/b/.pArK-sEmGrEp-IgNoRe/hidden.txt",
+        ):
+            with self.subTest(name=name):
+                path = self.repo / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("*\n")
+                self.commit("reserved ignore case alias fixture")
+                result = self.command(
+                    "git", "push", "--quiet", "origin", "feature/gate", success=False
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(b"Reserved Semgrep ignore", result.stderr)
+                self.assertEqual(self.remote_tip(), original)
+                path.unlink()
+
     def test_missing_tool_prevents_remote_update(self):
+        """A failed raw engine probe must block the initial branch publication."""
         self.commit("missing tool fixture")
-        (self.bin / "semgrep").unlink()
+        (self.bin / "semgrep-core").unlink()
         # A failing executable is used because another installation may be on PATH.
-        (self.bin / "semgrep").write_text("#!/bin/sh\nexit 127\n")
-        (self.bin / "semgrep").chmod(0o755)
+        (self.bin / "semgrep-core").write_text("#!/bin/sh\nexit 127\n")
+        (self.bin / "semgrep-core").chmod(0o755)
         result = self.command(
             "git", "push", "--quiet", "origin", "feature/gate", success=False
         )
@@ -260,6 +508,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertEqual(self.remote_tip(), b"")
 
     def test_branch_wide_requirement_survives_previous_push(self):
+        """A prior push must not erase the branch's meaningful-test requirement."""
         self.command("git", "push", "--quiet", "origin", "feature/gate")
         original = self.remote_tip()
         (self.repo / "implementation.py").write_text(
@@ -274,6 +523,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertEqual(self.remote_tip(), original)
 
     def test_changed_policy_is_blocked(self):
+        """Reject outgoing scanner rules that differ from the installed policy."""
         (self.repo / "tools/push_gate/semgrep.yml").write_text("rules: []\n")
         self.commit("unreviewed policy change")
         result = self.command(
@@ -284,6 +534,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertEqual(self.remote_tip(), b"")
 
     def test_symlink_prevents_remote_update(self):
+        """Reject committed symlinks rather than scanning their external targets."""
         (self.repo / "linked-private.txt").symlink_to(self.root / "outside.txt")
         self.commit("symlink fixture")
         result = self.command(
@@ -294,6 +545,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         self.assertEqual(self.remote_tip(), b"")
 
     def test_install_preserves_hooks_and_restores_configuration(self):
+        """Require hook replacement consent and restore the original hook routing."""
         self.command(sys.executable, "tools/push_gate/gate.py", "uninstall")
         hooks = self.repo / ".githooks"
         hooks.mkdir()
@@ -329,6 +581,7 @@ if pathlib.Path(name+'-fail').exists(): sys.exit(1)
         )
 
     def test_hook_uses_actual_push_destination(self):
+        """Fetch the selected push URL rather than assuming the fetch remote."""
         alternate = self.root / "alternate.git"
         self.command("git", "init", "--quiet", "--bare", str(alternate), cwd=self.root)
         self.command("git", "config", "remote.origin.pushurl", str(alternate))

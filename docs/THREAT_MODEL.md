@@ -165,6 +165,27 @@ validation before the affected release/capability expansion and schedule P2 with
   permissions. Vulnerability scans describe known findings at scan time, not a
   guarantee of vulnerability-free dependencies or upstream action bundles.
 - The November 20 scanner update triggered reassessment. The previous owner decision covers the historical configuration described below.
+- Native scanner remediation (2026-11-20): the supported Semgrep setup uses an
+  offline standard-library installer with three pinned official wheel SHA256
+  identities (macOS ARM64 and Linux glibc >=2.34 ARM64/x86_64). It verifies bytes
+  before ZIP parsing, rejects unsafe entries, extracts only the native engine
+  and its linked bundled library closure, checks the raw exact version, and
+  refuses existing destinations. The gate requires the native `osemgrep` and
+  `semgrep-core` names to identify the same file; it uses experimental native
+  scanning and validates stdout JSON without a Python fallback. MCP,
+  OpenTelemetry API and wcmatch are neither installed nor loaded by this setup,
+  removing the source of all eight Python scanner-environment advisories.
+  Existing venvs are unchanged and retain their findings until separately retired.
+  Scanner rules, Trivy checks, audits and suppression protections remain enabled;
+  the relative native ignore basename and its case-folded aliases are reserved
+  in every path component throughout the committed tree, including on
+  case-insensitive macOS filesystems.
+- Native residual boundary: hashes identify supplied release bytes, not publisher
+  trust or absence of vulnerabilities in the engine or bundled/system libraries.
+  Native execution was verified on macOS ARM64 and emulated Linux x86_64. Linux ARM64 has extraction coverage only. Trusted PATH, local tools and
+  installation directories remain required. Unsupported hosts fail closed;
+  no container or Python fallback is qualified. See the current boundary and
+  retained [historical assessment](security/SCANNER_REACHABILITY.md).
 - Previously accepted scoped risk: a separate audit of Semgrep 1.183.0's Python environment found
   five medium-severity CVEs in its constrained MCP and OpenTelemetry dependencies.
   Source tracing, independent automated review and a real instrumented scan found

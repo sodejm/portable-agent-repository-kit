@@ -1,4 +1,60 @@
-# Scoped acceptance: Semgrep Python dependencies
+# Native scanner remediation and historical assessment
+
+## Current installation boundary (2026-11-20)
+
+The supported scanner setup now extracts the pinned official Semgrep 1.186.0
+native engine and its linked bundled libraries without installing wheel Python
+code or resolving Python dependency packages. The offline installer verifies the
+complete wheel SHA256 before parsing and fails closed on unsafe entries, unknown
+dependencies, unsupported hosts or an inexact raw engine version. See the
+[installation guide](../LOCAL_PUSH_GATE.md#native-semgrep-installation) for the
+three artifact digests, platform requirements and migration procedure.
+
+The gate probes `semgrep-core -version` directly, requires `osemgrep` to be the
+same file, and uses `osemgrep scan --experimental` with stdout JSON. There is no
+Python launcher/fallback in this supported path. Local rules, strict analysis,
+inline suppression protection, environment sanitization, Trivy's full scan,
+HIGH/CRITICAL threshold and validation audits remain enabled. The native ignore
+basename `.park-semgrep-ignore`, including case-folded aliases, is reserved in
+every path component at every tree depth; only the gate's empty root file may
+supply that policy. Missing or malformed reports fail closed.
+
+This addresses all eight Python scanner-environment advisories at their source:
+the affected packages are neither installed nor loaded by the new scanner.
+
+| Old Python package | Advisories removed from the new installation |
+| --- | --- |
+| `mcp==1.29.0` | CVE-2026-59951, CVE-2026-116684, CVE-2026-116685, CVE-2026-116686, CVE-2026-115563 |
+| `opentelemetry-api==1.37.0` | CVE-2026-114603, CVE-2026-126360 |
+| `wcmatch==8.5.2` | CVE-2026-132276 |
+
+This is a **new installation**, not a patch to an old venv. The old environment
+retains its findings until separately retired; no CVE is suppressed or audit
+result reclassified. Neither Python package audits nor this extraction establish
+the safety of native binaries, bundled/system libraries, parser inputs, other
+tools or a compromised local account. The supplied digests pin source bytes;
+they are not an independent provenance proof. PATH, tools and installation parent
+directories must remain trusted. Review new releases and artifacts again on update.
+
+Ordinary regressions use synthetic ELF/Mach-O wheels and scanner doubles. They
+cover selected dependency closure, rejected ZIP paths/types/digests/platforms,
+atomic failure cleanup, same-file dispatch, exact version checks, stdout JSON,
+malformed/missing reports, findings/errors, reserved names and mixed-case aliases
+at the root, in nested files and in directory components, and remote update
+prevention. They do not execute official wheel payloads or query feeds.
+`PARK_NATIVE_SEMGREP=1 python3 tests/test_scanner_reachability.py -v` additionally
+checks an installed native engine against synthetic matching controls for all
+declared target extensions, inline suppression and nested ignores, with Python
+launchers trapped. It is opt-in and does not validate a real push or Trivy feed.
+
+The pinned wheels supplied the native engine and its bundled library dependencies on macOS ARM64, Linux x86_64 and Linux ARM64. The engine executed a local scan on macOS ARM64 and emulated Linux x86_64. Linux ARM64 has extraction coverage only. The macOS test detected matches across the declared extensions with Python launchers replaced by traps. [Issue #16](https://github.com/sodejm/portable-agent-repository-kit/issues/16) tracks remediation and gate validation.
+
+## Historical Python-environment assessment (superseded)
+
+The remainder preserves the earlier decision and its finite observations. Its
+commands and fallback profile describe the historical revisions, not the current
+supported setup. The old profiler has been replaced by native-only regressions;
+reproducing its observations requires the historical test source and venv.
 
 The 2026-11-20 update to Semgrep 1.186.0 triggered the expiry condition below. Its isolated installation resolves the same MCP and OpenTelemetry API versions. The November 20 audit found eight advisories in three packages. The additional findings were CVE-2026-115563 in MCP, CVE-2026-126360 in OpenTelemetry API and CVE-2026-132276 in wcmatch 8.5.2. The existing opt-in profile passed on the refreshed scanner, with ten positive controls and zero observed calls to those instrumented paths during the synthetic scan. Its coverage excludes any additional paths implicated by the new findings. The repository maintainer is tracking reassessment and the decision for this installation in [PARK issue #16](https://github.com/sodejm/portable-agent-repository-kit/issues/16).
 
@@ -80,8 +136,8 @@ argv, and the environment allowlist, including seeded
 MCP, tracing and Python-injection settings. Any change to these boundaries requires
 review of this acceptance, not merely updating the expected values.
 
-Run the optional real-library probe with the reviewed scanner environment's
-Python (replace `SCANNER_ENV` with its local directory):
+At the historical revision, the optional real-library probe used the reviewed
+scanner environment's Python (`SCANNER_ENV` denotes that old local directory):
 
 ```sh
 PARK_SCANNER_REACHABILITY=1 "$SCANNER_ENV/bin/python" tests/test_scanner_reachability.py -v
