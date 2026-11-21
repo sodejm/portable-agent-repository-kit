@@ -35,6 +35,8 @@ tokens and release systems.
 - workboard state stays outside the working tree, uses owner-only local permissions
   where supported, and is limited to bounded coordination metadata;
 - hooks are optional while CI repeats invariants;
+- the scheduled CodeQL extended workflow analyzes Python and GitHub Actions
+  workflows with pinned actions and only the read/upload permissions it needs;
 - the trusted default-branch owner-review gate re-reads live PR, account,
   permission, and paginated review state and binds its result to the head SHA;
 - secrets remain outside Git and evidence is sanitized;

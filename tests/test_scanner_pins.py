@@ -44,6 +44,23 @@ class ScannerPinTests(unittest.TestCase):
             if name == "repository-contract.yml":
                 self.assertIn(setup, workflow)
 
+    def test_codeql_extended_workflow_covers_actions_and_python(self) -> None:
+        """Keep the scheduled security scan scoped and pinned to reviewed actions."""
+        workflow = (ROOT / ".github/workflows/codeql.yml").read_text(encoding="utf-8")
+        codeql = "github/codeql-action/"
+        release = "@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4"
+        self.assertIn("name: CodeQL extended", workflow)
+        self.assertIn("cron: \"23 4 * * 1\"", workflow)
+        self.assertIn("pull_request:", workflow)
+        self.assertNotIn("pull_request_target:", workflow)
+        self.assertIn("language: [actions, python]", workflow)
+        self.assertIn("queries: security-extended", workflow)
+        self.assertIn("contents: read", workflow)
+        self.assertIn("security-events: write", workflow)
+        self.assertIn("persist-credentials: false", workflow)
+        self.assertIn(f"{codeql}init{release}", workflow)
+        self.assertIn(f"{codeql}analyze{release}", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
