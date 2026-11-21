@@ -1,5 +1,7 @@
 # Scoped acceptance: Semgrep Python dependencies
 
+The 2026-11-20 update to Semgrep 1.186.0 triggered the expiry condition below. Its isolated installation resolves the same MCP and OpenTelemetry API versions. The November 20 audit found eight advisories in three packages. The additional findings were CVE-2026-115563 in MCP, CVE-2026-126360 in OpenTelemetry API and CVE-2026-132276 in wcmatch 8.5.2. The existing opt-in profile passed on the refreshed scanner, with ten positive controls and zero observed calls to those instrumented paths during the synthetic scan. Its coverage excludes any additional paths implicated by the new findings. The repository maintainer is tracking reassessment and the decision for this installation in [PARK issue #16](https://github.com/sodejm/portable-agent-repository-kit/issues/16).
+
 ## Decision and expiry
 
 **Accepted on 2026-11-04 for PARK's optional local push gate only.** The owner

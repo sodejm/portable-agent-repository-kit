@@ -155,7 +155,7 @@ validation before the affected release/capability expansion and schedule P2 with
 - Existing evidence / limitation: Local contract and adapter checks exist; they are not a provenance proof.
 - Scanner maintenance: the pre-push policy requires upstream stable-release
   verification before pushing, reviewed pin/test/doc updates and trusted-gate
-  refresh. The optional gate pins Semgrep 1.183.0 and Trivy 0.76.1; no rule,
+  refresh. The optional gate pins Semgrep 1.186.0 and Trivy 0.76.2; no rule,
   severity threshold, bypass or token permission changes accompany this refresh.
   Release recency is not evidence that a tool or transitive dependency is secure.
 - Dependency refresh (2026-11-04): optional validation uses Ruff 0.17.3 and
@@ -164,7 +164,8 @@ validation before the affected release/capability expansion and schedule P2 with
   and setup-python v7.1.0, reducing mutable-tag exposure without changing token
   permissions. Vulnerability scans describe known findings at scan time, not a
   guarantee of vulnerability-free dependencies or upstream action bundles.
-- Accepted scoped risk: a separate audit of Semgrep 1.183.0's Python environment found
+- The November 20 scanner update triggered reassessment. The previous owner decision covers the historical configuration described below.
+- Previously accepted scoped risk: a separate audit of Semgrep 1.183.0's Python environment found
   five medium-severity CVEs in its constrained MCP and OpenTelemetry dependencies.
   Source tracing, independent automated review and a real instrumented scan found
   the affected paths unreachable in this gate's local-scan mode. The owner
