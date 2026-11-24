@@ -75,6 +75,11 @@ project license.
 - CI repeats repository invariants; local hooks are optional convenience only.
 - Vendor files remain small adapters and must not redefine the contract.
 
+The [AAIF project catalog](https://aaif.io/projects) lists `AGENTS.md`, Agent
+Skills, and MCP as separate open projects. PARK uses each for its corresponding
+repository concern; checked-in compatibility does not imply universal client
+support or AAIF conformance.
+
 ## Included workflows
 
 PARK includes focused skills for repository orientation, checks, GitHub state
