@@ -158,12 +158,16 @@ validation before the affected release/capability expansion and schedule P2 with
   refresh. The optional gate pins Semgrep 1.186.0 and Trivy 0.76.2; no rule,
   severity threshold, bypass or token permission changes accompany this refresh.
   Release recency is not evidence that a tool or transitive dependency is secure.
-- Dependency refresh (2026-11-04): optional validation uses Ruff 0.17.3 and
-  Coverage 7.17.2 (Python >=3.11); Build 1.6.1 and pip-audit 2.10.1 remain current.
+- Dependency refresh (2026-11-23): optional validation uses Ruff 0.17.6 and
+  Coverage 7.17.5 (Python >=3.11); Build 1.6.1 and pip-audit 2.10.1 remain current.
   Workflow actions are pinned to verified release commits for checkout v7.0.1
   and setup-python v7.1.0, reducing mutable-tag exposure without changing token
   permissions. Vulnerability scans describe known findings at scan time, not a
   guarantee of vulnerability-free dependencies or upstream action bundles.
+- AAIF catalog alignment (2026-11-23): instructions now identify `AGENTS.md`,
+  Agent Skills, and MCP as distinct projects in the AAIF catalog. This is
+  documentation-only: it adds no parser, command, permission, network recipient,
+  or client-support claim.
 - The November 20 scanner update triggered reassessment. The previous owner decision covers the historical configuration described below.
 - Native scanner remediation (2026-11-20): the supported Semgrep setup uses an
   offline standard-library installer with three pinned official wheel SHA256

@@ -26,7 +26,7 @@ class ScannerPinTests(unittest.TestCase):
         requirements = (ROOT / "tools/push_gate/requirements.txt").read_text(encoding="utf-8")
         pins = dict(line.split("==") for line in requirements.splitlines() if line)
         self.assertEqual(pins, {
-            "ruff": "0.17.3", "coverage": "7.17.2",
+            "ruff": "0.17.6", "coverage": "7.17.5",
             "build": "1.6.1", "pip-audit": "2.10.1",
         })
         guide = (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text(encoding="utf-8")

@@ -5,6 +5,10 @@ the project publishes versioned releases.
 
 ## Unreleased
 
+- Refresh optional validation pins for Ruff 0.17.6 and Coverage 7.17.5; retain
+  the verified Build, pip-audit, Semgrep, Trivy, and immutable CI action pins.
+- Clarify the distinct `AGENTS.md`, Agent Skills, and MCP formats listed in the
+  AAIF project catalog without expanding client-support or runtime claims.
 - Add the portable `session-usage-audit` skill with Git-only churn analysis,
   optional Codex session and token accounting, and local workflow recommendations.
 - Exclude local JSON configuration and generated churn reports from skill

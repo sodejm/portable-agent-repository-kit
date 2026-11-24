@@ -17,6 +17,10 @@ MCP                          portable external tool protocol
 
 ## Standards-first decisions
 
+- The [AAIF project catalog](https://aaif.io/projects) lists `AGENTS.md`, Agent
+  Skills, and MCP as distinct projects. PARK uses them for instructions,
+  reusable expertise, and tool/data integration respectively; adopting one does
+  not imply support for the others in every client.
 - Use `AGENTS.md` for repository instructions. Nested contracts are allowed for
   genuinely different subtrees.
 - Author skills in `.agents/skills/<name>/SKILL.md` with YAML frontmatter containing
