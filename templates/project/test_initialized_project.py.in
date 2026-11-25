@@ -1,0 +1,31 @@
+"""Exercise the initialized project's public setup and feature commands."""
+
+import json
+from pathlib import Path
+import subprocess
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class InitializedProjectTests(unittest.TestCase):
+    """Keep setup safe to repeat and feature paths confined to the project."""
+
+    def test_initialized_contract(self):
+        """Repeating initialization preserves the profile and selected integrations."""
+        profile = ROOT / ".park/profile.json"
+        original = profile.read_bytes()
+        result = subprocess.run(["make", "init"], cwd=ROOT, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(original, profile.read_bytes())
+        self.assertIn(json.loads(original)["assurance"], ("low", "medium", "high", "critical"))
+        self.assertTrue((ROOT / ".specify/memory/constitution.md").is_file())
+        self.assertTrue((ROOT / ".squad/team.md").is_file())
+
+    def test_feature_rejects_invalid_name(self):
+        """The public feature command rejects a path outside its specification folder."""
+        result = subprocess.run(["make", "feature", "NAME=../outside"], cwd=ROOT,
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("choose a lowercase feature name", result.stderr)

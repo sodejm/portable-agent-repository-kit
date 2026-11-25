@@ -1,6 +1,7 @@
 # Documentation index
 
 - [Create a GitHub repository from the AGENTS.md template](GETTING_STARTED.md)
+- [Choose project assurance and review the generated constitution](PROJECT_ASSURANCE.md)
 - [Find your agent instructions, skills, and generated files](REPOSITORY_LAYOUT.md)
 - [Portability Architecture](PORTABILITY.md): canonical spine and adapters.
 - [Compare coding agent support and synchronize a Claude Code skill](COMPATIBILITY.md)

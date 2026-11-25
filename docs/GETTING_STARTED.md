@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 - Git
 - GNU Make or a compatible `make` implementation for convenience
 - GitHub CLI only if the project will create or inspect GitHub state
@@ -12,17 +12,23 @@ PARK's setup and contract checks use only Python's standard library.
 ## Configure a GitHub template clone
 
 [Use PARK as a GitHub template](https://github.com/new?template_name=portable-agent-repository-kit&template_owner=sodejm),
-clone the repository you created, and run these commands from its root.
+clone the repository you created, and run these commands from its root before editing any files.
 
 ```bash
 make init
 make check
 ```
 
-Enter a display name and description. Enter your GitHub owner and repository slug
-to set the project’s identity, or accept the slug derived from the display name.
-The default branch is `main`. Choose `mit`, `apache-2.0`, or `none` for the
-project license.
+Enter the project name and description, then give the languages and workload
+contexts as comma-separated values. For example, enter `python,go` for languages
+and `cli,api` for contexts. Press Enter to accept the suggested `medium` assurance
+level for that combination. Choose `mit`, `apache-2.0`, or `none` for the license.
+
+Review `.park/profile.json` for your selections and `.specify/memory/constitution.md`
+for the controls they generated. Setup also creates Spec Kit templates and a local
+Squad coordinator. Once the checks pass, commit the generated files. Running
+`make init` again shows where to find the constitution. See the
+[project assurance guide](PROJECT_ASSURANCE.md) for context and language guidance.
 
 ### Configure without prompts
 
@@ -32,6 +38,9 @@ For scripted setup, pass the same details as command-line arguments.
 python3 scripts/configure_project.py \
   --name "Example" \
   --description "A concise project description" \
+  --languages python \
+  --context api \
+  --assurance medium \
   --github-owner example-owner \
   --license apache-2.0
 ```
@@ -39,30 +48,23 @@ python3 scripts/configure_project.py \
 The command only runs in a directory containing `.portable-agent-template`. It
 updates repository-owned placeholders, creates the chosen license, replaces the
 template README with a project README, synchronizes adapters, and removes the
-marker and generator-only assets. The setup script accepts `--slug` and
-`--default-branch` when the inferred slug or default branch differs from your
-repository. Run `make check`, review the diff, and commit the generated files.
+marker and generator-only assets. Use `--github-owner` to set the GitHub owner. You can
+override the inferred slug with `--slug` and the default branch (`main`) with
+`--default-branch`. Run `make check`, review the diff, and commit the generated
+files.
 
 ## Create into a local directory
 
-From a PARK checkout:
+From a PARK Git checkout, choose a new or empty directory outside the checkout.
 
 ```bash
-python3 scripts/create_project.py /absolute/path/to/example \
-  --name "Example" \
-  --description "A concise project description" \
-  --github-owner example-owner \
-  --default-branch main \
-  --license mit \
-  --init-git
+python3 scripts/create_project.py ../example --interactive --init-git
+cd ../example
+make check
 ```
 
-The command refuses a non-empty target and never deletes or overwrites existing
-content. It copies the portable baseline, renders metadata, synchronizes Claude
-skill adapters, optionally initializes Git, and runs the repository contract check.
-
-Use `--license apache-2.0` or `--license none` when appropriate. License selection
-is a product and governance decision; PARK does not choose silently.
+The local generator uses the same interview and accepts the same flags for
+scripted setup. The `--init-git` flag initializes Git in the new directory.
 
 ## First project decisions
 

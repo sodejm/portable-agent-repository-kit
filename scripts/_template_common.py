@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import os
 import re
+import runpy
 import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -50,20 +54,30 @@ def copy_template(source: Path, destination: Path) -> None:
         raise TemplateError("destination cannot be the template or a directory inside it")
 
     ensure_empty_destination(destination)
+    if not (source / ".git").exists():
+        raise TemplateError("create projects from a PARK Git checkout with a tracked file inventory")
+    inventory = subprocess.run(
+        ["git", "ls-files", "--cached", "-z"], cwd=source, capture_output=True
+    )
+    if inventory.returncode:
+        raise TemplateError("cannot read the template Git inventory")
+    paths = [source / os.fsdecode(item) for item in inventory.stdout.split(b"\0") if item]
     destination.mkdir(parents=True, exist_ok=True)
-    excluded = DISTRIBUTION_IGNORE(str(source), [item.name for item in source.iterdir()])
-    for item in source.iterdir():
-        if item.name in SKIP_NAMES or item.name in excluded:
+    for item in paths:
+        relative = item.relative_to(source)
+        if relative.parts[0] in SKIP_NAMES or any(
+            part == ".git" or DISTRIBUTION_IGNORE("", [part]) for part in relative.parts
+        ):
             continue
-        target = destination / item.name
+        if item.resolve() != item or item.is_symlink():
+            raise TemplateError(f"symlink cannot be distributed: {relative}")
         if item.is_dir():
-            shutil.copytree(
-                item,
-                target,
-                ignore=DISTRIBUTION_IGNORE,
-            )
-        else:
-            shutil.copy2(item, target)
+            continue
+        if not item.is_file():
+            raise TemplateError(f"unavailable template file: {relative}")
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, target)
 
 
 def validate_slug(value: str) -> str:
@@ -93,23 +107,13 @@ def validate_owner(value: str | None) -> str | None:
 
 
 def replace_tokens(root: Path, replacements: dict[str, str]) -> None:
-    """Replace literal tokens in UTF-8 files, leaving Git metadata and binary files alone.
-
-    Replacements apply to source as well as documentation and are performed in
-    mapping order. Callers must validate values before invoking this write operation.
-    """
-    for path in root.rglob("*"):
-        if not path.is_file() or ".git" in path.parts:
-            continue
-        try:
-            original = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        rendered = original
-        for token, value in replacements.items():
-            rendered = rendered.replace(token, value)
-        if rendered != original:
-            path.write_text(rendered, encoding="utf-8")
+    """Render only project documents using one literal substitution per token."""
+    pattern = re.compile("|".join(map(re.escape, replacements)))
+    for relative in ("README.md", "docs/THREAT_MODEL.md", "docs/security/REVIEW_COVERAGE.md",
+                     "docs/OWNER_REVIEW_POLICY.md", ".github/review-policy.json"):
+        path = root / relative
+        original = path.read_text(encoding="utf-8")
+        path.write_text(pattern.sub(lambda match: replacements[match[0]], original), encoding="utf-8")
 
 
 def write_license(root: Path, choice: str, copyright_holder: str) -> None:
@@ -157,6 +161,32 @@ def synchronize_claude_skills(root: Path) -> None:
             )
 
 
+def write_initialization_handoff(root: Path, plan: dict) -> None:
+    """Cover the initial Git change and use the generated project's own acceptance cases."""
+    options = ["git"]
+    with tempfile.TemporaryDirectory() as temporary:
+        if (root / ".git").exists():
+            tracked = subprocess.check_output(options + [
+                "diff", "--no-renames", "--name-only", "-z", "HEAD", "--"
+            ], cwd=root)
+        else:
+            # A destination can live inside another checkout. Isolate its file inventory.
+            subprocess.run(["git", "init", "--quiet", "--bare", temporary], check=True)
+            options += [f"--git-dir={temporary}", f"--work-tree={root}"]
+            tracked = b""
+        untracked = subprocess.check_output(options + [
+            "ls-files", "--others", "--exclude-standard", "-z"
+        ], cwd=root)
+    behavior = runpy.run_path(str(root / "tools/push_gate/session_delivery.py"))["behavior"]
+    paths = [os.fsdecode(item) for item in (tracked + untracked).split(b"\0") if item]
+    plan["acceptance"][0]["paths"] = sorted(path for path in set(paths) if behavior(path))
+    directory = root / "docs/session-plans"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "project-initialization.json").write_text(
+        json.dumps(plan, indent=2) + "\n", encoding="utf-8"
+    )
+
+
 def configure_project(
     root: Path,
     *,
@@ -167,6 +197,7 @@ def configure_project(
     license_choice: str,
     copyright_holder: str | None,
     default_branch: str,
+    profile: dict,
 ) -> None:
     """Configure a marked template and remove source-only generator assets.
 
@@ -187,6 +218,31 @@ def configure_project(
     owner = validate_owner(github_owner)
     if not re.fullmatch(r"[A-Za-z0-9._/-]+", default_branch):
         raise TemplateError("default branch contains unsupported characters")
+
+    from project_profile import render
+
+    for directory, subdirs, files in os.walk(root):
+        if Path(directory) == root:
+            subdirs[:] = [d for d in subdirs if d != ".git"]
+        if any((Path(directory) / item).is_symlink() for item in subdirs + files):
+            raise TemplateError("setup requires a template tree without symlinks")
+    for target in (".park", ".specify", ".squad", ".github/agents/squad.agent.md"):
+        if (root / target).exists():
+            raise TemplateError(f"setup would overwrite {target}")
+    if (root / ".git").exists():
+        changes = subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=all", "--ignored"],
+            cwd=root, text=True,
+        )
+        if any(not (line.startswith("!! ") and line.endswith(".pyc")) for line in changes.splitlines()):
+            raise TemplateError("in-place setup requires a clean template clone; preserve your changes first")
+    render(root, name, profile)
+    policy_path = root / "tools/push_gate/policy.json"
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    policy["default_branch"] = default_branch
+    policy["checks"] = [["{python}", "tools/push_gate/session_delivery.py", "push", "{base}", "{sha}"],
+                        ["make", "check"]]
+    policy_path.write_text(json.dumps(policy, indent=2) + "\n", encoding="utf-8")
 
     project_readme = root / "templates" / "project" / "README.md"
     if not project_readme.is_file():
@@ -224,15 +280,21 @@ def configure_project(
     if template_creator_skill.exists():
         shutil.rmtree(template_creator_skill)
     synchronize_claude_skills(root)
-    marker.unlink()
     # Generator assets are needed by PARK itself, not by a configured project.
     # Keep _template_common.py because generated adapter synchronization imports it.
-    for generator_file in ("create_project.py", "configure_project.py"):
+    for generator_file in ("create_project.py", "configure_project.py", "project_profile.py"):
         (root / "scripts" / generator_file).unlink(missing_ok=True)
-    for generator_directory in ("templates", "tests", "docs/superpowers"):
+    assets = root / "templates/project"
+    acceptance = (assets / "test_initialized_project.py.in").read_bytes()
+    handoff = json.loads((assets / "initialization.json.in").read_bytes())
+    for generator_directory in ("templates", "tests", "docs/superpowers", "docs/session-plans"):
         path = root / generator_directory
         if path.exists():
             shutil.rmtree(path)
+    marker.unlink()
+    (root / "tests").mkdir()
+    (root / "tests/test_initialized_project.py").write_bytes(acceptance)
+    write_initialization_handoff(root, handoff)
 
 
 def initialize_git(root: Path, default_branch: str) -> None:

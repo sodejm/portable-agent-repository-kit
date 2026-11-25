@@ -13,6 +13,10 @@ Vendor adapters may point here but must not contradict it.
 Stop and ask when a higher-priority instruction conflicts with a lower-priority
 one or when authorization for a consequential action is unclear.
 
+## First project setup
+
+When a user starts a new project from a marked template clone, guide them through `make init` before feature work. For noninteractive agents, collect the interview answers in chat and pass them as CLI arguments. Maintain PARK itself in its marked state.
+
 ## Working agreement
 
 - Inspect the exact checkout, branch, worktree, and local changes before editing.

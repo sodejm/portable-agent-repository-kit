@@ -1,12 +1,12 @@
 {
   "stage": "implementation",
   "request": "Make the GitHub template and skill workflow easier to discover, use make init in the quick start, and update the GitHub listing.",
-  "scope": "The README, setup and compatibility guides, the documentation index, and an interactive entry point to the existing one-time configurator.",
+  "scope": "The README, setup and compatibility guides, documentation index and GitHub listing. Both setup entry points use the project assurance interview.",
   "setup": "Use a fresh checkout of PARK. Run the quick start in a separate marked template copy with Python, Git and Make.",
   "constraints": "Preserve the flag-based setup interface and one-time marker. Keep product-specific discovery limits. Manage GitHub description and topics through the repository settings.",
   "steps": [
     {
-      "action": "Expose the guarded in-place configurator through make init. Collect required project metadata before it writes files.",
+      "action": "Use the existing project assurance interview for make init. Collect and validate all answers before writing project files.",
       "paths": [
         "Makefile",
         "scripts/configure_project.py",
@@ -37,8 +37,8 @@
       "kind": "success",
       "entrypoint": "make init in the README quick start",
       "given": "A fresh marked GitHub template copy.",
-      "when": "Enter a display name, description, owner, repository slug, default branch and license.",
-      "then": "The project README, review policy and license reflect the chosen inputs. The marker is removed and a second invocation is rejected.",
+      "when": "Enter a project name, description, languages and workload contexts, accept the suggested assurance level, and choose a license.",
+      "then": "The profile, constitution, README and license reflect the answers. The marker is removed and a second invocation reports completed setup without changing the project.",
       "paths": [
         "Makefile",
         "scripts/configure_project.py",

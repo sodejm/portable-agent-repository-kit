@@ -62,24 +62,24 @@ PARK checkout -- create_project.py --> new local directory
 GitHub template clone -- make init --> configured current directory
 ```
 
-Both paths use the same rendering and validation logic:
+Both paths use the same project profile and rendering logic.
 
-1. Validate the destination and refuse unsafe or repeated configuration.
-2. Render project name, description, owner, and default branch.
-3. Require an explicit `mit`, `apache-2.0`, or `none` license choice.
-4. Replace PARK's README with the generated project's README.
-5. Reset the review policy to an unconfigured, fail-closed project copy.
-6. Synchronize environment adapters from canonical skills.
-7. Remove `.portable-agent-template` and generator-only assets.
+1. Collect the project name, description, languages, workload contexts,
+   assurance level, and license. Validate the answers before writing files.
+2. Write the selections to `.park/profile.json` and the corresponding controls
+   to `.specify/memory/constitution.md`. Add Spec Kit templates and local Squad files.
+3. Render the project README and license, reset the review policy, and
+   synchronize Claude Code adapters from the canonical skills.
+4. Remove the template marker and generator assets. Write the project's initial
+   acceptance tests and session plan.
 
-The local generator runs the contract check before it returns. After `make init`
-in a GitHub template clone, run `make check` to validate the generated repository.
+Run `make check` in the resulting repository. A subsequent `make init` reports
+that initialization is complete.
 
 The resulting repository keeps the portable agent contract, skills, adapters,
-documentation, CI, and checks. It does not keep PARK's project generator, generator
-tests, license templates, template-only project-creator skill, template marker,
-or PARK-specific implementation plans/specifications under `docs/superpowers/`.
-Those plans contain PARK task and approval context, not consumer instructions.
+documentation, CI, and checks. Setup removes PARK's generator and its tests,
+license templates, project-creator skill, template marker, and implementation
+plans under `docs/superpowers/`. Those plans describe PARK’s own tasks and approvals.
 
 The included `agent-workboard` skill writes coordination state beside Git's common
 directory (or in a local agent-state directory outside Git for non-Git projects).

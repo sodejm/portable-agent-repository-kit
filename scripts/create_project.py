@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
 from pathlib import Path
 
+from project_profile import add_arguments, collect
+
 from _template_common import (
-    LICENSE_CHOICES,
+    ensure_empty_destination,
     TemplateError,
     configure_project,
     copy_template,
@@ -19,41 +22,38 @@ from _template_common import (
 
 
 def parser() -> argparse.ArgumentParser:
+    """Define interactive and scripted project creation options."""
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("destination", type=Path)
-    result.add_argument("--name", required=True)
-    result.add_argument("--description", required=True)
-    result.add_argument("--slug")
-    result.add_argument("--github-owner")
-    result.add_argument("--license", required=True, choices=LICENSE_CHOICES)
-    result.add_argument("--copyright-holder")
-    result.add_argument("--default-branch", default="main")
+    add_arguments(result)
     result.add_argument("--init-git", action="store_true")
     return result
 
 
 def main() -> int:
+    """Publish the project only after generation and optional Git initialization succeed."""
     args = parser().parse_args()
-    destination = args.destination.expanduser()
+    destination = args.destination.expanduser().absolute()
     try:
-        copy_template(template_root(), destination)
-        configure_project(
-            destination,
-            name=args.name,
-            description=args.description,
-            slug=args.slug,
-            github_owner=args.github_owner,
-            license_choice=args.license,
-            copyright_holder=args.copyright_holder,
-            default_branch=args.default_branch,
-        )
-        if args.init_git:
-            initialize_git(destination, args.default_branch)
-    except TemplateError as error:
+        settings = collect(args)
+        source = template_root()
+        if destination.is_symlink() or destination.resolve().is_relative_to(source):
+            raise TemplateError("choose a destination outside the template without a symlink")
+        ensure_empty_destination(destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=destination.parent) as staging:
+            project = Path(staging) / "project"
+            copy_template(source, project)
+            configure_project(project, **settings)
+            if args.init_git:
+                initialize_git(project, args.default_branch)
+            ensure_empty_destination(destination)
+            project.rename(destination)
+    except (TemplateError, OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
-    print(f"Created {args.name} at {display_path(destination)}")
-    print("Next: review the generated files, run `make check`, and commit the result.")
+    print(f"Created {settings['name']} at {display_path(destination)}")
+    print("Run `make check` and review the generated project constitution.")
     return 0
 
 

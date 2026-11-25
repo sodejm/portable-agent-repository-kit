@@ -1,11 +1,7 @@
-.PHONY: init doctor validate-contract sync-agent-adapters check-agent-adapters check-code-documentation check
+.PHONY: doctor validate-contract sync-agent-adapters check-agent-adapters check-code-documentation check
 
 doctor:
 	python3 scripts/agent/doctor.py
-
-init:
-	@test -f .portable-agent-template || { echo "make init requires an unconfigured PARK template (missing .portable-agent-template)." >&2; exit 1; }
-	python3 scripts/configure_project.py --interactive
 
 validate-contract:
 	python3 scripts/agent/validate_contract.py
@@ -21,3 +17,11 @@ check-code-documentation:
 
 check:
 	python3 scripts/agent/check.py
+
+.PHONY: init feature
+init:
+	@if test -f .portable-agent-template; then python3 scripts/configure_project.py --interactive; elif test -f .park/profile.json; then echo "Project initialized. See .specify/memory/constitution.md"; else echo "Project profile missing" >&2; exit 1; fi
+
+export NAME
+feature:
+	python3 scripts/agent/feature.py

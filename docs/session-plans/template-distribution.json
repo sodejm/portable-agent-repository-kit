@@ -1,0 +1,88 @@
+{
+  "stage": "implementation",
+  "request": "Keep private workspace files out of new projects.",
+  "scope": "Local template distribution and project document rendering.",
+  "setup": "Run from the PARK checkout using Python and Git.",
+  "constraints": "Do not modify the source while copying a project.",
+  "steps": [
+    {
+      "action": "Restrict Git distribution to tracked regular files and render project documents only.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_template.py -k test_distribution",
+        "expected": "All privacy cases pass."
+      }
+    },
+    {
+      "action": "Route agent-led project creation through the same profile choices as the public CLI.",
+      "paths": [
+        ".agents/skills/template-project-creator/SKILL.md",
+        ".claude/skills/template-project-creator/SKILL.md",
+        "tests/test_template.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_template.py -k test_creator_guidance",
+        "expected": "Both adapters describe the interview and supported profile options."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "copy_template invoked by the creation CLI",
+      "given": "A checkout contains a tracked file alongside a private untracked file.",
+      "when": "Copy a synthetic source checkout.",
+      "then": "Only the tracked file appears in the distribution.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_distribution_uses_git_inventory"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "copy_template invoked by the creation CLI",
+      "given": "A tracked entry links to an external private file.",
+      "when": "Copy a synthetic source checkout.",
+      "then": "The generator rejects the link before copying its contents.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_distribution_rejects_tracked_symlink"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "copy_template invoked by the creation CLI",
+      "given": "The source is an extracted directory with a private file and no tracked inventory.",
+      "when": "Attempt to distribute that directory.",
+      "then": "Generation fails before creating the destination.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_distribution_requires_source_inventory"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Project creation skill and CLI help",
+      "given": "An agent uses either documented skill adapter.",
+      "when": "Read the project creation instructions and public CLI options.",
+      "then": "Both include the interview and the language, context, assurance and license choices.",
+      "paths": [
+        ".agents/skills/template-project-creator/SKILL.md",
+        ".claude/skills/template-project-creator/SKILL.md",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_creator_guidance_exposes_interview_and_scripted_options"
+    }
+  ],
+  "pending": []
+}

@@ -12,8 +12,8 @@ Actions to catch changes that leave Claude Code’s skill copies out of sync.
 ## Quick start
 
 1. [Create a repository from PARK](https://github.com/new?template_name=portable-agent-repository-kit&template_owner=sodejm).
-2. Clone **your new repository** and open its root directory. You’ll need Git,
-   Python 3.9 or later, and Make.
+2. Clone **your new repository** and open its root directory before making edits.
+   You’ll need Git, Python 3.10 or later, and Make.
 3. Initialize the project and check the generated files.
 
 ```bash
@@ -21,9 +21,14 @@ make init
 make check
 ```
 
-Choose the project name, description, repository details, and license at the
-prompts. Review the diff and commit it when the checks pass. To start from a
-local PARK checkout, [generate a project in an empty directory](docs/GETTING_STARTED.md#create-into-a-local-directory).
+The setup interview asks for a project name, description, languages, workload
+contexts, assurance level, and license. Press Enter at the assurance prompt to
+accept the level suggested for your contexts. Review the generated project
+profile in `.park/profile.json` and constitution in `.specify/memory/constitution.md`,
+then commit the generated files when the checks pass.
+
+From a local PARK checkout, use the same interview to
+[create a project in a separate directory](docs/GETTING_STARTED.md#create-into-a-local-directory).
 
 ## Supported environments
 
