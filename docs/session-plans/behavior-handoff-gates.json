@@ -41,6 +41,23 @@
         "command": "python3 -m unittest discover -s tests -p test_local_push_gate.py",
         "expected": "All Git fixtures pass, including acceptance through staged commits and pushes to a bare remote."
       }
+    },
+    {
+      "action": "Refresh the required Semgrep pin, verify the three wheel digests against the official release and run the native control scan on macOS ARM64.",
+      "paths": [
+        "docs/LOCAL_PUSH_GATE.md",
+        "docs/THREAT_MODEL.md",
+        "docs/security/SCANNER_REACHABILITY.md",
+        "tests/test_scanner_pins.py",
+        "tests/test_native_semgrep_install.py",
+        "tests/test_scanner_reachability.py",
+        "tools/push_gate/install_native_semgrep.py",
+        "tools/push_gate/policy.json"
+      ],
+      "verify": {
+        "command": "PARK_NATIVE_SEMGREP=1 python3 tests/test_scanner_reachability.py -v",
+        "expected": "The real native scanner detects the fixtures across all eleven declared target extensions."
+      }
     }
   ],
   "acceptance": [
@@ -74,6 +91,35 @@
       ],
       "runner": "unittest",
       "test": "tests/test_local_push_gate.py::RemoteTests::test_handoff_rejections"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Official wheel verification in the offline native installer",
+      "given": "The current release has one reviewed SHA256 digest for each of the three supported platforms.",
+      "when": "Read the installer version and artifact identities alongside the documented installation procedure.",
+      "then": "The installer and the guide agree with all three reviewed release digests.",
+      "paths": [
+        "tools/push_gate/install_native_semgrep.py",
+        "tools/push_gate/policy.json",
+        "tests/test_native_semgrep_install.py",
+        "tests/test_scanner_pins.py",
+        "tests/test_scanner_reachability.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_native_semgrep_install.py::NativeInstallTests::test_official_digests_and_documented_platforms"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Native Semgrep installer wheel validation",
+      "given": "A supplied wheel differs from the expected SHA256 identity.",
+      "when": "Attempt to read the wheel with the reviewed digest.",
+      "then": "The installer rejects the payload before opening the ZIP archive.",
+      "paths": [
+        "tools/push_gate/install_native_semgrep.py",
+        "tests/test_native_semgrep_install.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_native_semgrep_install.py::NativeInstallTests::test_digest_before_zip_parsing"
     }
   ],
   "pending": []

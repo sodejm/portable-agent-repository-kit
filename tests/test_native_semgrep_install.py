@@ -91,13 +91,13 @@ class NativeInstallTests(unittest.TestCase):
 
     def test_official_digests_and_documented_platforms(self):
         """Keep all supplied artifact identities synchronized with the guide."""
-        self.assertEqual(INSTALL.VERSION, "1.186.0")
+        self.assertEqual(INSTALL.VERSION, "1.187.0")
         self.assertEqual(
             INSTALL.WHEELS,
             {
-                "macos-arm64": "94b473227b1abe89d104bf87a50e257b3c47f0e09483e4290babc99c01e3aea8",
-                "linux-aarch64": "bde206edcfa9ac2f5ed5e3fc58d1c675b4e9979a716ecb46b4e60e6bb6a035a4",
-                "linux-x86_64": "54ebaf79adf4e5855c54d5e4457d8d03f27cc6bf73d79642281790b833d92e4f",
+                "macos-arm64": "a44a8f486719e69fe38c451c70b4808bed5532bbcb4c25a8dd04a74617dfcca0",
+                "linux-aarch64": "79f0a3dc63607fada4ae2225599ab5eef8005124a8484814184df72805afcfc0",
+                "linux-x86_64": "ad160ed527bd153b96616814366a6d17f451d37babf75df6705327aede0cc8bd",
             },
         )
         guide = (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text()
@@ -156,7 +156,7 @@ class NativeInstallTests(unittest.TestCase):
                         ("semgrep/bin/unused.so", b"must not even parse"),
                         ("semgrep/main.py", b"raise RuntimeError('must not execute')"),
                         ("mcp/__init__.py", b"must not install"),
-                        ("semgrep-1.186.0.dist-info/METADATA", b"Requires-Dist: mcp"),
+                        ("semgrep-1.187.0.dist-info/METADATA", b"Requires-Dist: mcp"),
                     ]
                 )
                 self.assertEqual(
@@ -246,7 +246,7 @@ class NativeInstallTests(unittest.TestCase):
         )
         destination = self.root / "new-native"
         result = subprocess.CompletedProcess(
-            [], 0, b"semgrep-core version: 1.186.0 (e7f7148977)\n", b""
+            [], 0, b"semgrep-core version: 1.187.0 (a5341ae595)\n", b""
         )
         with (
             patch.object(INSTALL, "host_platform", return_value="linux-x86_64"),
@@ -280,8 +280,8 @@ class NativeInstallTests(unittest.TestCase):
         digest = self.wheel_bytes([(INSTALL.ENGINE, elf())])
         destination = self.root / "never-created"
         for result in (
-            subprocess.CompletedProcess([], 0, b"wrapper 1.186.0", b"private"),
-            subprocess.CompletedProcess([], 1, b"1.186.0", b"private"),
+            subprocess.CompletedProcess([], 0, b"wrapper 1.187.0", b"private"),
+            subprocess.CompletedProcess([], 1, b"1.187.0", b"private"),
             OSError("private"),
         ):
             with (

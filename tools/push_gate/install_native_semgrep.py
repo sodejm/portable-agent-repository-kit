@@ -23,11 +23,11 @@ import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 
-VERSION = "1.186.0"
+VERSION = "1.187.0"
 WHEELS = {
-    "macos-arm64": "94b473227b1abe89d104bf87a50e257b3c47f0e09483e4290babc99c01e3aea8",
-    "linux-aarch64": "bde206edcfa9ac2f5ed5e3fc58d1c675b4e9979a716ecb46b4e60e6bb6a035a4",
-    "linux-x86_64": "54ebaf79adf4e5855c54d5e4457d8d03f27cc6bf73d79642281790b833d92e4f",
+    "macos-arm64": "a44a8f486719e69fe38c451c70b4808bed5532bbcb4c25a8dd04a74617dfcca0",
+    "linux-aarch64": "79f0a3dc63607fada4ae2225599ab5eef8005124a8484814184df72805afcfc0",
+    "linux-x86_64": "ad160ed527bd153b96616814366a6d17f451d37babf75df6705327aede0cc8bd",
 }
 ENGINE = "semgrep/bin/semgrep-core"
 MAX_WHEEL = 256 * 1024 * 1024
@@ -267,7 +267,7 @@ def install(wheel, destination):
         if (
             result.returncode
             or result.stdout.strip()
-            != f"semgrep-core version: {VERSION} (e7f7148977)".encode()
+            != f"semgrep-core version: {VERSION} (a5341ae595)".encode()
         ):
             raise InstallError("Native engine version verification failed")
         manifest = {

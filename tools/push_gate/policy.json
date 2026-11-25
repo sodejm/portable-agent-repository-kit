@@ -2,7 +2,7 @@
   "default_branch": "main",
   "session_handoffs": true,
   "tools": {
-    "semgrep": "1.186.0",
+    "semgrep": "1.187.0",
     "trivy": "0.76.2"
   },
   "test_areas": [
