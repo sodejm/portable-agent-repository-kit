@@ -21,9 +21,33 @@
         "command": "python3 -m unittest discover -s tests -p test_assurance_gate.py",
         "expected": "All assurance cases pass."
       }
+    },
+    {
+      "action": "Evaluate owner review for branch pushes associated with a pull request.",
+      "paths": [
+        "scripts/ci/review_gate.py",
+        "tests/test_review_gate.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_review_gate.py",
+        "expected": "The associated PR and pushed commit reach the existing review policy."
+      }
     }
   ],
   "acceptance": [
+    {
+      "kind": "boundary",
+      "entrypoint": "Evaluate owner review for branch pushes associated with a pull request.",
+      "given": "Repository contract completed for a branch push with an associated PR.",
+      "when": "The trusted gate resolves the workflow and evaluates review state.",
+      "then": "It checks the pushed commit against the live PR head and enforces the review policy. Ambiguous associations and missing commit IDs fail.",
+      "paths": [
+        "scripts/ci/review_gate.py",
+        "tests/test_review_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_review_gate.py::ReviewGateTests::test_associated_push_requires_live_pr_and_matching_head"
+    },
     {
       "kind": "success",
       "entrypoint": "Run tier-dependent checks and verify release prerequisites.",

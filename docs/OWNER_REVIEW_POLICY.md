@@ -32,7 +32,10 @@ check context is `validate`, and that job validates PR code with a read-only tok
 A minimal `Review event notification` workflow runs for submitted, edited, and
 dismissed reviews with no repository permissions. Completion of either workflow
 triggers `Owner review gate`, whose definition and Python evaluator are checked
-out only from the repository's default branch. A maintainer can also recover a
+out only from the repository's default branch. When GitHub associates a branch
+push with one pull request, the gate verifies the pushed commit against the live
+PR head and applies the same review policy. Pushes with no associated PR need
+no review check. A maintainer can also recover a
 missed or failed notification with its `workflow_dispatch` PR-number input.
 
 The gate does not run PR code and does not download artifacts or caches. With the

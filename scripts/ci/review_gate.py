@@ -489,9 +489,9 @@ def _workflow_trigger(client: GitHub, event: dict[str, Any], repository: str) ->
         or path != expected_path
     ):
         raise GateError("live triggering workflow identity is invalid")
-    if run_name == "Repository contract" and run.get("event") == "push":
-        return None, None
     pulls = run.get("pull_requests")
+    if run.get("event") == "push" and pulls == []:
+        return None, None
     if (
         not isinstance(pulls, list)
         or len(pulls) != 1
@@ -500,9 +500,11 @@ def _workflow_trigger(client: GitHub, event: dict[str, Any], repository: str) ->
         or pulls[0]["number"] < 1
     ):
         raise GateError("live triggering workflow does not identify exactly one PR")
-    expected_head = run.get("head_sha") if run_name == "Repository contract" else None
-    if expected_head is not None and (not isinstance(expected_head, str) or not SHA.fullmatch(expected_head)):
-        raise GateError("live triggering workflow head SHA is invalid")
+    expected_head = None
+    if run_name == "Repository contract":
+        expected_head = run.get("head_sha")
+        if not isinstance(expected_head, str) or not SHA.fullmatch(expected_head):
+            raise GateError("live triggering workflow head SHA is invalid")
     return pulls[0]["number"], expected_head
 
 
@@ -558,7 +560,7 @@ def main() -> int:
         if number is None:
             if target is not None:
                 raise GateError("live workflow has no PR but the event identified one")
-            print("No pull request is associated with this default-branch run.")
+            print("No pull request is associated with this push.")
             return 0
         pull = fetch_pull(client, repository, number)
         if pull.head_sha not in checks:
