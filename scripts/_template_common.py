@@ -54,17 +54,15 @@ def copy_template(source: Path, destination: Path) -> None:
         raise TemplateError("destination cannot be the template or a directory inside it")
 
     ensure_empty_destination(destination)
+    if not (source / ".git").exists():
+        raise TemplateError("create projects from a PARK Git checkout with a tracked file inventory")
+    inventory = subprocess.run(
+        ["git", "ls-files", "--cached", "-z"], cwd=source, capture_output=True
+    )
+    if inventory.returncode:
+        raise TemplateError("cannot read the template Git inventory")
+    paths = [source / os.fsdecode(item) for item in inventory.stdout.split(b"\0") if item]
     destination.mkdir(parents=True, exist_ok=True)
-    if (source / ".git").exists():
-        inventory = subprocess.run(
-            ["git", "ls-files", "--cached", "-z"], cwd=source, capture_output=True
-        )
-        if inventory.returncode:
-            raise TemplateError("cannot read the template Git inventory")
-        paths = [source / os.fsdecode(item) for item in inventory.stdout.split(b"\0") if item]
-    else:
-        # A source archive has no Git inventory. Use only a pristine distribution.
-        paths = source.rglob("*")
     for item in paths:
         relative = item.relative_to(source)
         if relative.parts[0] in SKIP_NAMES or any(

@@ -115,7 +115,7 @@ validation before the affected release/capability expansion and schedule P2 with
 - Attack path / prerequisite: Local configuration or audit output is copied into a public generated project.
 - Inherent impact: High; likelihood: Medium; priority: P1.
 - Existing evidence / limitation: Copy/synchronization excludes *.local.json and churn-v* reports plus known runtime files.
-- Proposed mitigation and validation: Git checkouts distribute only tracked regular files. Tests exercise untracked private files and tracked links outside the source. Extracted archives must be pristine because they lack a Git inventory.
+- The generator copies only tracked regular files from a Git checkout. Regression tests cover untracked private files, tracked links outside the source and rejection of extracted directories that lack a Git inventory.
 - Residual risk / status: unverified; human review and evidence pending. Retain
   this entry until a reviewer records outcome, exact revision and remaining risk.
 

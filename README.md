@@ -34,39 +34,22 @@ availability. See [Compatibility](docs/COMPATIBILITY.md).
 
 ## Start a project
 
-### Create at any local path
+Select **Use this template**, clone the new repository and run the setup interview in the clean clone.
 
 ```bash
-python3 scripts/create_project.py /absolute/path/to/my-project \
-  --name "My Project" \
-  --description "What the project does" \
-  --github-owner my-account \
-  --license mit
+make init
+make check
 ```
 
-The destination must not exist or must be empty. PARK never merges into or
-overwrites a populated directory.
+Choose a project name, description, languages, workload contexts, assurance level and license. Setup recommends a level based on the workload and writes the security constitution, Spec Kit templates and Squad configuration. Review the generated files and commit them.
 
-### Use GitHub's template button
-
-1. Mark this repository as a **Template repository** in GitHub settings.
-2. Select **Use this template** and clone the new repository.
-3. From the new clone, run:
+To create a separate project directory from a PARK Git checkout, run the same interview with the generator.
 
 ```bash
-python3 scripts/configure_project.py \
-  --name "My Project" \
-  --description "What the project does" \
-  --github-owner my-account \
-  --license mit
+python3 scripts/create_project.py ../my-project --interactive
 ```
 
-The in-place configurator requires `.portable-agent-template`, renders project
-metadata, writes the selected license, and removes the marker and generator-only
-assets. Commit the result.
-
-License choices are `mit`, `apache-2.0`, or `none`. PARK does not silently choose a
-project license.
+Choose a new or empty destination outside PARK. For scripted setup and hosted enforcement, see [Getting started](docs/GETTING_STARTED.md) and [Project assurance](docs/PROJECT_ASSURANCE.md).
 
 ## The open spine
 

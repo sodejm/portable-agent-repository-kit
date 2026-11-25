@@ -20,6 +20,17 @@ from _template_common import copy_template, synchronize_claude_skills
 class TemplateTests(unittest.TestCase):
     """Validate template output using isolated synthetic repositories."""
 
+    def test_creator_guidance_exposes_interview_and_scripted_options(self) -> None:
+        """Keep agent-led setup aligned with the public project creation command."""
+        help_text = subprocess.check_output([sys.executable, str(CREATE), "--help"], text=True)
+        skills = (".agents/skills/template-project-creator", ".claude/skills/template-project-creator")
+        for directory in skills:
+            instructions = (ROOT / directory / "SKILL.md").read_text(encoding="utf-8")
+            for flag in ("--interactive", "--languages", "--context", "--assurance", "--license"):
+                with self.subTest(directory=directory, flag=flag):
+                    self.assertIn(flag, help_text)
+                    self.assertIn(flag, instructions)
+
     def test_distribution_excludes_private_configuration_and_audit_reports(self) -> None:
         """Keep private sentinels out of distribution and adapter copies."""
         with tempfile.TemporaryDirectory(prefix="park-privacy-") as temp:
@@ -35,6 +46,8 @@ class TemplateTests(unittest.TestCase):
             for path in private_paths:
                 path.write_text("synthetic private sentinel\n", encoding="utf-8")
             synchronize_claude_skills(source)
+            subprocess.run(["git", "init", "-q", str(source)], check=True)
+            subprocess.run(["git", "add", "-f", "."], cwd=source, check=True)
             copy_template(source, destination)
             self.assertTrue((destination / public.relative_to(source)).is_file())
             for root in (source / ".claude/skills/example-audit", destination / ".claude/skills/example-audit"):
@@ -56,6 +69,16 @@ class TemplateTests(unittest.TestCase):
             subprocess.run(["git", "add", "public.txt"], cwd=source, check=True)
             copy_template(source, output)
             self.assertEqual([p.name for p in output.iterdir()], ["public.txt"])
+
+    def test_distribution_requires_source_inventory(self) -> None:
+        """Reject a directory without an inventory before collecting any files."""
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp) / "src", Path(temp) / "dst"
+            source.mkdir()
+            (source / ".env").write_text("private fixture")
+            with self.assertRaisesRegex(RuntimeError, "Git checkout"):
+                copy_template(source, output)
+            self.assertFalse(output.exists())
 
     def test_distribution_rejects_tracked_symlink(self) -> None:
         """Reject a tracked path redirected to a private file."""
@@ -93,6 +116,10 @@ class TemplateTests(unittest.TestCase):
                     "*.pyc",
                 ),
             )
+            tracked = subprocess.check_output(["git", "ls-files", "--cached", "-z"], cwd=ROOT)
+            subprocess.run(["git", "init", "-q", str(isolated_source)], check=True)
+            subprocess.run(["git", "update-index", "--add", "-z", "--stdin"], cwd=isolated_source,
+                           input=tracked, check=True)
             create_script = isolated_source / "scripts" / "create_project.py"
         return subprocess.run(
             [

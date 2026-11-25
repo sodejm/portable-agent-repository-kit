@@ -15,6 +15,18 @@
         "command": "python3 -m unittest discover -s tests -p test_template.py -k test_distribution",
         "expected": "All privacy cases pass."
       }
+    },
+    {
+      "action": "Route agent-led project creation through the same profile choices as the public CLI.",
+      "paths": [
+        ".agents/skills/template-project-creator/SKILL.md",
+        ".claude/skills/template-project-creator/SKILL.md",
+        "tests/test_template.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_template.py -k test_creator_guidance",
+        "expected": "Both adapters describe the interview and supported profile options."
+      }
     }
   ],
   "acceptance": [
@@ -43,6 +55,33 @@
       ],
       "runner": "unittest",
       "test": "tests/test_template.py::TemplateTests::test_distribution_rejects_tracked_symlink"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "copy_template invoked by the creation CLI",
+      "given": "The source is an extracted directory with a private file and no tracked inventory.",
+      "when": "Attempt to distribute that directory.",
+      "then": "Generation fails before creating the destination.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_distribution_requires_source_inventory"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Project creation skill and CLI help",
+      "given": "An agent uses either documented skill adapter.",
+      "when": "Read the project creation instructions and public CLI options.",
+      "then": "Both include the interview and the language, context, assurance and license choices.",
+      "paths": [
+        ".agents/skills/template-project-creator/SKILL.md",
+        ".claude/skills/template-project-creator/SKILL.md",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_creator_guidance_exposes_interview_and_scripted_options"
     }
   ],
   "pending": []

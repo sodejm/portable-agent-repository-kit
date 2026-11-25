@@ -2,51 +2,42 @@
 
 ## Prerequisites
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 - Git
 - GNU Make or a compatible `make` implementation for convenience
 - GitHub CLI only if the project will create or inspect GitHub state
 
-PARK's setup and contract checks use only Python's standard library.
-
-## Create into a local directory
-
-From a PARK checkout:
-
-```bash
-python3 scripts/create_project.py /absolute/path/to/example \
-  --name "Example" \
-  --description "A concise project description" \
-  --github-owner example-owner \
-  --default-branch main \
-  --license mit \
-  --init-git
-```
-
-The command refuses a non-empty target and never deletes or overwrites existing
-content. It copies the portable baseline, renders metadata, synchronizes Claude
-skill adapters, optionally initializes Git, and runs the repository contract check.
-
-Use `--license apache-2.0` or `--license none` when appropriate. License selection
-is a product and governance decision; PARK does not choose silently.
+Setup uses Python's standard library and Git. The portable checks run locally. Security scans require the tools listed in [Project assurance](PROJECT_ASSURANCE.md).
 
 ## Configure a GitHub template clone
 
-After creating a repository with GitHub's **Use this template** button:
+Select **Use this template**, clone the new repository and run the interview in the clean clone.
 
 ```bash
-python3 scripts/configure_project.py \
-  --name "Example" \
-  --description "A concise project description" \
-  --github-owner example-owner \
-  --license apache-2.0
+make init
 ```
 
-The command only runs in a directory containing `.portable-agent-template`. It
-updates repository-owned placeholders, creates the chosen license, replaces the
-template README with a project README, synchronizes adapters, and removes the
-marker and generator-only assets. The portable contract and its checks remain. Run
-it once, review the diff, then commit.
+Enter a name, description, languages and workload contexts. Choose the suggested assurance level or select another, then choose a license. Setup creates a project README, a security constitution, Spec Kit templates and Squad coordination files. Review the generated files, run `make check` and commit the result. Running `make init` again preserves the configuration.
+
+## Create into a local directory
+
+From a PARK Git checkout, choose a new or empty destination outside the checkout.
+
+```bash
+python3 scripts/create_project.py ../example --interactive
+```
+
+The generator copies tracked files and stages setup before publishing the directory. Supply explicit options for unattended setup. This example creates a Python API at medium assurance and initializes a local Git repository.
+
+```bash
+python3 scripts/create_project.py ../example \
+  --name "Example" \
+  --description "A small internal API" \
+  --languages python --context api --assurance medium \
+  --license mit --init-git
+```
+
+Run `make check` in the generated directory. License choices are `mit`, `apache-2.0` and `none`.
 
 ## First project decisions
 
