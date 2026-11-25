@@ -44,6 +44,8 @@ jobs:
           head=$(git rev-parse HEAD)
           if [[ -n "$PR_BASE" ]]; then
             base=$(git merge-base "$PR_BASE" "$head")
+          elif [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/* && "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
+            base=$(git merge-base "refs/remotes/origin/$DEFAULT_BRANCH" "$head")
           elif [[ -n "$BEFORE" && "$BEFORE" != 0000000000000000000000000000000000000000 ]]; then
             base="$BEFORE"
           elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then

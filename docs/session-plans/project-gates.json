@@ -76,11 +76,24 @@
       "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_critical_owner_needs_separate_reviewer"
     },
     {
+      "kind": "boundary",
+      "entrypoint": "Verify accepted behavior in the hosted assurance job.",
+      "given": "A topic branch already contains commits covered by its handoff.",
+      "when": "Push another commit to the topic branch.",
+      "then": "Validate the complete change since the branch diverged. Default-branch updates still use the previous tip.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_hosted_acceptance_range"
+    },
+    {
       "kind": "success",
       "entrypoint": "Provision security scanners in the hosted job.",
-      "given": "The policy specifies the reviewed native Semgrep release.",
+      "given": "The policy selects the latest stable native Semgrep release.",
       "when": "Run the hosted installer against a controlled provider.",
-      "then": "The wheel request uses the exact version from the policy.",
+      "then": "The installer passes the latest selector to the wheel resolver and stops before extracting an archive that fails verification.",
       "paths": [
         "scripts/ci/install_assurance_tools.sh",
         "tests/test_assurance_gate.py"

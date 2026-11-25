@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest import mock
 
@@ -32,9 +33,9 @@ class AssuranceGateTests(unittest.TestCase):
 
     def git(self, *args):
         """Run Git against the isolated fixture with a disposable identity."""
-        subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
+        return subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
                         "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", *args],
-                       cwd=self.root, check=True, capture_output=True)
+                       cwd=self.root, check=True, capture_output=True, text=True).stdout.strip()
 
     def commit_level(self, level):
         """Commit the requested assurance profile."""
@@ -95,6 +96,34 @@ class AssuranceGateTests(unittest.TestCase):
         (self.root / ".github/review-policy.json").write_text("{}")
         with self.assertRaises(ValueError):
             assurance.tier(self.root)
+
+    def test_hosted_acceptance_range(self):
+        """Check the revisions passed by the hosted job on multi-commit branches."""
+        workflow = (ROOT / ".github/workflows/assurance.yml").read_text()
+        step = workflow.split("      - name: Verify accepted behavior\n", 1)[1]
+        script = textwrap.dedent(step.split("        run: |\n", 1)[1].split("\n\n", 1)[0])
+        (self.root / "tools/push_gate/session_delivery.py").write_text(
+            "import sys\nprint(' '.join(sys.argv[1:]))\n"
+        )
+        self.commit_level("low")
+        fork = self.git("rev-parse", "HEAD")
+        self.git("update-ref", "refs/remotes/origin/trunk", fork)
+        self.commit_level("medium")
+        previous = self.git("rev-parse", "HEAD")
+        self.commit_level("high")
+        head = self.git("rev-parse", "HEAD")
+        for event, branch, before, pr_base, expected in (
+            ("push", "topic", previous, "", fork),
+            ("push", "topic", "0" * 40, "", fork),
+            ("push", "trunk", previous, "", previous),
+            ("pull_request", "topic", "", previous, previous),
+        ):
+            with self.subTest(event=event, branch=branch, before=before):
+                env = {**os.environ, "GITHUB_EVENT_NAME": event, "DEFAULT_BRANCH": "trunk",
+                       "GITHUB_REF": f"refs/heads/{branch}", "BEFORE": before, "PR_BASE": pr_base}
+                result = subprocess.run(["bash", "-e", "-c", script], env=env, cwd=self.root,
+                                        check=True, capture_output=True, text=True)
+                self.assertEqual(result.stdout.strip(), f"push {expected} {head} --snapshot .")
 
     def test_ci_uses_policy_scanner_version(self):
         """Exercise wheel selection without fetching archives or installing tools."""
