@@ -12,11 +12,13 @@ history unless the user asks to initialize Git.
 
 ## Required decisions
 
-Before running the generator, obtain or infer only these values:
+Use the project interview in an interactive terminal. When acting on a user's behalf, collect their choices in chat and pass the answers to the generator.
 
-- destination: an absolute path that does not exist or is an empty directory;
-- name and concise description;
-- license: `mit`, `apache-2.0`, or `none`.
+- Choose a new or empty destination outside the PARK Git checkout.
+- Ask for a project name, concise description and languages. Accept `undecided` when the language choice is open.
+- Ask which workload contexts apply. Supported choices are `cli`, `library`, `web`, `api`, `service`, `iac` and `financial`. Multiple choices can be combined.
+- Ask for low, medium, high or critical assurance. Suggest low for a CLI or library, medium for a web app, API or service, high for IaC and critical for financial transactions. Use the strongest suggestion across the selected contexts.
+- Ask which license to use. Supported choices are `mit`, `apache-2.0` and `none`.
 
 Accept an optional GitHub owner, project slug, copyright holder, and default
 branch. Do not invent an owner or license. Default the branch to `main` only
@@ -28,12 +30,13 @@ Confirm this checkout contains `scripts/create_project.py` and
 `.portable-agent-template`; otherwise, explain that this is already a generated
 project and cannot generate another project through this skill.
 
-Run the generator from the PARK checkout with `python3` and explicit arguments:
+For the terminal interview, run `python3 scripts/create_project.py ../my-project --interactive`. To use choices already supplied by the user, pass them explicitly. For example, a Python API at medium assurance uses the following options.
 
 ```bash
 python3 scripts/create_project.py /absolute/path/to/project \
   --name "Project Name" \
   --description "What the project does" \
+  --languages python --context api --assurance medium \
   --license mit
 ```
 

@@ -20,6 +20,17 @@ from _template_common import copy_template, synchronize_claude_skills
 class TemplateTests(unittest.TestCase):
     """Validate template output using isolated synthetic repositories."""
 
+    def test_creator_guidance_exposes_interview_and_scripted_options(self) -> None:
+        """Keep agent-led setup aligned with the public project creation command."""
+        help_text = subprocess.check_output([sys.executable, str(CREATE), "--help"], text=True)
+        skills = (".agents/skills/template-project-creator", ".claude/skills/template-project-creator")
+        for directory in skills:
+            instructions = (ROOT / directory / "SKILL.md").read_text(encoding="utf-8")
+            for flag in ("--interactive", "--languages", "--context", "--assurance", "--license"):
+                with self.subTest(directory=directory, flag=flag):
+                    self.assertIn(flag, help_text)
+                    self.assertIn(flag, instructions)
+
     def test_distribution_excludes_private_configuration_and_audit_reports(self) -> None:
         """Keep private sentinels out of distribution and adapter copies."""
         with tempfile.TemporaryDirectory(prefix="park-privacy-") as temp:
@@ -35,6 +46,8 @@ class TemplateTests(unittest.TestCase):
             for path in private_paths:
                 path.write_text("synthetic private sentinel\n", encoding="utf-8")
             synchronize_claude_skills(source)
+            subprocess.run(["git", "init", "-q", str(source)], check=True)
+            subprocess.run(["git", "add", "-f", "."], cwd=source, check=True)
             copy_template(source, destination)
             self.assertTrue((destination / public.relative_to(source)).is_file())
             for root in (source / ".claude/skills/example-audit", destination / ".claude/skills/example-audit"):
@@ -44,6 +57,42 @@ class TemplateTests(unittest.TestCase):
             for path in private_paths:
                 self.assertFalse((destination / path.relative_to(source)).exists())
                 self.assertEqual(path.read_text(encoding="utf-8"), "synthetic private sentinel\n")
+
+    def test_distribution_uses_git_inventory(self) -> None:
+        """Distribute tracked content without collecting developer files."""
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp) / "src", Path(temp) / "dst"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q", str(source)], check=True)
+            (source / "public.txt").write_text("distributed")
+            (source / "credentials.txt").write_text("private fixture")
+            subprocess.run(["git", "add", "public.txt"], cwd=source, check=True)
+            copy_template(source, output)
+            self.assertEqual([p.name for p in output.iterdir()], ["public.txt"])
+
+    def test_distribution_requires_source_inventory(self) -> None:
+        """Reject a directory without an inventory before collecting any files."""
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp) / "src", Path(temp) / "dst"
+            source.mkdir()
+            (source / ".env").write_text("private fixture")
+            with self.assertRaisesRegex(RuntimeError, "Git checkout"):
+                copy_template(source, output)
+            self.assertFalse(output.exists())
+
+    def test_distribution_rejects_tracked_symlink(self) -> None:
+        """Reject a tracked path redirected to a private file."""
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp) / "src", Path(temp) / "dst"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q", str(source)], check=True)
+            outside = Path(temp) / "private.txt"
+            outside.write_text("private fixture")
+            (source / "public.txt").symlink_to(outside)
+            subprocess.run(["git", "add", "public.txt"], cwd=source, check=True)
+            with self.assertRaisesRegex(RuntimeError, "symlink"):
+                copy_template(source, output)
+            self.assertFalse((output / "public.txt").exists())
 
     def create(self, destination: Path, license_choice: str = "mit") -> subprocess.CompletedProcess[str]:
         """Generate a synthetic project outside the source tree and return CLI output."""
@@ -67,6 +116,10 @@ class TemplateTests(unittest.TestCase):
                     "*.pyc",
                 ),
             )
+            tracked = subprocess.check_output(["git", "ls-files", "--cached", "-z"], cwd=ROOT)
+            subprocess.run(["git", "init", "-q", str(isolated_source)], check=True)
+            subprocess.run(["git", "update-index", "--add", "-z", "--stdin"], cwd=isolated_source,
+                           input=tracked, check=True)
             create_script = isolated_source / "scripts" / "create_project.py"
         return subprocess.run(
             [
@@ -87,6 +140,57 @@ class TemplateTests(unittest.TestCase):
             capture_output=True,
             check=False,
         )
+
+    def test_make_init_configures_template_once(self) -> None:
+        """Exercise the README interview and its read-only second invocation."""
+        with tempfile.TemporaryDirectory(prefix="park-init-") as temp:
+            root = Path(temp) / "project"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", Path(temp).name,
+            ))
+            answers = "Example Project\nA sample for PARK.\npython,go\ncli,api\n\nmit\n"
+            result = subprocess.run(["make", "init"], cwd=root, input=answers,
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            profile = root / ".park/profile.json"
+            self.assertEqual(json.loads(profile.read_bytes()), {
+                "version": 1, "languages": ["python", "go"],
+                "contexts": ["cli", "api"], "assurance": "medium",
+            })
+            self.assertIn("Authorize each operation", (root / ".specify/memory/constitution.md").read_text())
+            self.assertTrue((root / ".specify/templates/spec-template.md").is_file())
+            self.assertTrue((root / ".squad/team.md").is_file())
+            self.assertIn("# Example Project", (root / "README.md").read_text())
+            self.assertIn("A sample for PARK.", (root / "README.md").read_text())
+            self.assertIn("MIT License", (root / "LICENSE").read_text())
+            self.assertFalse((root / ".portable-agent-template").exists())
+            profile_bytes = profile.read_bytes()
+            repeat = subprocess.run(["make", "init"], cwd=root, input="", text=True, capture_output=True)
+            self.assertEqual(repeat.returncode, 0, repeat.stderr)
+            self.assertIn("Project initialized", repeat.stdout)
+            self.assertEqual(profile.read_bytes(), profile_bytes)
+
+    def test_make_init_requires_complete_answers(self) -> None:
+        """Reject an interrupted interview or invalid answers without writing files."""
+        with tempfile.TemporaryDirectory(prefix="park-init-") as temp:
+            root = Path(temp) / "project"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", Path(temp).name,
+            ))
+            for answers, message in (
+                ("Example\n", "interview ended before setup was complete"),
+                ("Example\nTest project\npython\nmobile\n", "unknown context"),
+                ("Example\nTest project\n\n\n\ninvalid\n", "unknown license choice"),
+            ):
+                with self.subTest(message=message):
+                    result = subprocess.run(["make", "init"], cwd=root, input=answers,
+                                            text=True, capture_output=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(message, result.stderr)
+                    self.assertTrue((root / ".portable-agent-template").is_file())
+                    self.assertFalse((root / ".park").exists())
+                    for path in ("README.md", "LICENSE"):
+                        self.assertEqual((root / path).read_bytes(), (ROOT / path).read_bytes())
 
     def test_create_project_and_validate_generated_repository(self) -> None:
         """Check generated policy, skill resources and the full consumer gate."""

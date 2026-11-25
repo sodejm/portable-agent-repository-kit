@@ -1,9 +1,10 @@
 # Documentation index
 
-- [Getting Started](GETTING_STARTED.md): create or configure a project.
-- [Repository Layout](REPOSITORY_LAYOUT.md): directory map, ownership, and project-generation lifecycle.
+- [Create a GitHub repository from the AGENTS.md template](GETTING_STARTED.md)
+- [Choose project assurance and review the generated constitution](PROJECT_ASSURANCE.md)
+- [Find your agent instructions, skills, and generated files](REPOSITORY_LAYOUT.md)
 - [Portability Architecture](PORTABILITY.md): canonical spine and adapters.
-- [Compatibility](COMPATIBILITY.md): environment-by-environment support boundary.
+- [Compare coding agent support and synchronize a Claude Code skill](COMPATIBILITY.md)
 - [Skills](SKILLS.md): authoring, synchronization, and global-skill selection.
 - [Source documentation](CODE_DOCUMENTATION.md): writing requirements, language conventions and check coverage.
 - [Hooks](HOOKS.md): safe optional automation.

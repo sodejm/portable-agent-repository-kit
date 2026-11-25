@@ -1,0 +1,9 @@
+# Project assurance
+
+Run `make init` in a fresh clone created from the template. The interview asks for the project name, description, languages, workload contexts, assurance level and license. Press Enter to accept a suggested level. Combining contexts chooses the strongest suggestion. A financial web service receives both web authorization and transaction integrity requirements. Use commas for multiple languages or contexts. Use `undecided` when selecting a language later. A second `make init` reports that setup is complete.
+
+To create a separate directory from the PARK checkout, run `python3 scripts/create_project.py ../my-project --interactive`. For automation, supply `--name`, `--description`, `--license`, `--languages`, `--context` and `--assurance`. Existing automation that supplies only identity and license gets the CLI context, undecided languages and low assurance. The template uses Git to validate branch names. Use a fresh clean clone for in-place setup.
+
+Each project starts with a profile in `.park/profile.json`, a constitution in `.specify/memory/constitution.md`, official Spec Kit document templates and a local Squad coordinator. `make feature NAME=example` scaffolds the spec, plan and tasks without a tool download. Before implementation, translate accepted outcomes into the executable cases described in the [handoff guide](SESSION_HANDOFF.md). Edit the constitution and profile together through review as project scope changes. Retain applicable tests when changing assurance levels.
+
+The offline scaffold uses [Spec Kit v1.4.4](https://github.com/github/spec-kit/tree/v1.4.4) and local casting assets from [Squad v2.0.0](https://github.com/github/squad/tree/v2.0.0). Their licenses accompany the generated files. Install the corresponding CLI for its additional commands. Squad starts with an empty roster. Add members as work warrants and keep provider access, MCP servers and hosted automation opt-in.

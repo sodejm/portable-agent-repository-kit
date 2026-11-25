@@ -40,3 +40,10 @@ See [SECURITY.md](SECURITY.md) for reporting guidance and
 
 Use the [reusable goal prompt](prompts/next-milestone.md) and
 [usage guide](prompts/README.md) for an orchestrated milestone run.
+
+## Project assurance
+
+Read the [project constitution](.specify/memory/constitution.md) and the
+[assurance guide](docs/PROJECT_ASSURANCE.md). Start a feature with
+`make feature NAME=refund-transfer`, describe its success and boundary cases in
+the generated spec, and record executable acceptance in the session handoff.

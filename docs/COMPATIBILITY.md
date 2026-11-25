@@ -1,4 +1,8 @@
-# Compatibility
+# How Codex, Claude Code, and GitHub Copilot read PARK’s instructions
+
+Codex reads the root `AGENTS.md`. PARK’s `CLAUDE.md` and
+`.github/copilot-instructions.md` direct Claude Code and GitHub Copilot to that
+same file. Skill discovery and tool access depend on the client.
 
 | Capability | Codex | Copilot | Claude Code | Antigravity | ChatGPT |
 | --- | --- | --- | --- | --- | --- |
@@ -12,6 +16,24 @@ Support changes over time. Verify current product documentation before relying o
 a particular discovery path, permission, or hook. The portable fallback is always
 to tell the environment to read `AGENTS.md`, select a relevant canonical skill,
 and run the repository-owned command.
+
+## Update an Agent Skill for Claude Code
+
+Suppose your team wants its validation report to name the failing Make target.
+Add that instruction to `.agents/skills/repository-check/SKILL.md` in your
+generated project. Run the following commands from the repository root to update
+the Claude Code copy and check the result.
+
+```bash
+make sync-agent-adapters
+git diff -- .claude/skills/repository-check/SKILL.md
+make check
+```
+
+The diff should show the same instruction in Claude Code’s discovery copy.
+Commit the canonical skill and its copy together. If you skip synchronization,
+`make check` reports the drift locally and the repository contract workflow
+checks it again on a pull request.
 
 ## Compatibility test
 
