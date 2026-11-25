@@ -15,6 +15,8 @@ The goal is not to make every agent behave identically. The goal is to give ever
 agent the same trustworthy repository contract, the same reusable workflows, and
 the same evidence gates without locking a project to one vendor.
 
+In a fresh project clone, run `make init` for guided setup. See [Project assurance](docs/PROJECT_ASSURANCE.md) for profiles, Spec Kit, Squad and CI.
+
 ## Supported environments
 
 | Environment | Repository contract | Skills | Tool integration |

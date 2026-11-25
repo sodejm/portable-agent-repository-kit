@@ -338,3 +338,7 @@ implementation originated in the maintainer’s standalone Goblin Council packag
 no model SDK or third-party proxy is bundled. Human owner: maintainer/security
 reviewer assignment pending. Validate P1 controls before affected release;
 residual risk acceptance and exact-revision human review remain pending.
+
+### Project bootstrap
+
+Setup consumes local project metadata and pinned integration assets. Local creation stages output before publication. In-place initialization requires a fresh checkout and rejects symlinks or existing integration state. The initial coordinator has no network or release authority. Profile edits affect generated project obligations and require policy review.

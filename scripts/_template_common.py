@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import os
 import re
 import shutil
@@ -170,6 +171,7 @@ def configure_project(
     license_choice: str,
     copyright_holder: str | None,
     default_branch: str,
+    profile: dict,
 ) -> None:
     """Configure a marked template and remove source-only generator assets.
 
@@ -190,6 +192,31 @@ def configure_project(
     owner = validate_owner(github_owner)
     if not re.fullmatch(r"[A-Za-z0-9._/-]+", default_branch):
         raise TemplateError("default branch contains unsupported characters")
+
+    from project_profile import render
+
+    for directory, subdirs, files in os.walk(root):
+        if Path(directory) == root:
+            subdirs[:] = [d for d in subdirs if d != ".git"]
+        if any((Path(directory) / item).is_symlink() for item in subdirs + files):
+            raise TemplateError("setup requires a template tree without symlinks")
+    for target in (".park", ".specify", ".squad", ".github/agents/squad.agent.md"):
+        if (root / target).exists():
+            raise TemplateError(f"setup would overwrite {target}")
+    if (root / ".git").exists():
+        changes = subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=all", "--ignored"],
+            cwd=root, text=True,
+        )
+        if any(not line.endswith((".pyc", "/__pycache__/")) for line in changes.splitlines()):
+            raise TemplateError("in-place setup requires a clean template clone; preserve your changes first")
+    render(root, name, profile)
+    policy_path = root / "tools/push_gate/policy.json"
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    policy["default_branch"] = default_branch
+    policy["checks"] = [["{python}", "tools/push_gate/session_delivery.py", "push", "{base}", "{sha}"],
+                        ["make", "check"]]
+    policy_path.write_text(json.dumps(policy, indent=2) + "\n", encoding="utf-8")
 
     project_readme = root / "templates" / "project" / "README.md"
     if not project_readme.is_file():
@@ -227,15 +254,15 @@ def configure_project(
     if template_creator_skill.exists():
         shutil.rmtree(template_creator_skill)
     synchronize_claude_skills(root)
-    marker.unlink()
     # Generator assets are needed by PARK itself, not by a configured project.
     # Keep _template_common.py because generated adapter synchronization imports it.
-    for generator_file in ("create_project.py", "configure_project.py"):
+    for generator_file in ("create_project.py", "configure_project.py", "project_profile.py"):
         (root / "scripts" / generator_file).unlink(missing_ok=True)
     for generator_directory in ("templates", "tests", "docs/superpowers"):
         path = root / generator_directory
         if path.exists():
             shutil.rmtree(path)
+    marker.unlink()
 
 
 def initialize_git(root: Path, default_branch: str) -> None:

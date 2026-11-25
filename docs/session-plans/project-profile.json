@@ -1,0 +1,91 @@
+{
+  "stage": "implementation",
+  "request": "Interview the project owner and seed relevant engineering controls.",
+  "scope": "Project creation, in-place setup, Spec Kit and Squad initialization.",
+  "setup": "Run from the PARK checkout using Python and Git.",
+  "constraints": "Do not modify the source while copying a project.",
+  "steps": [
+    {
+      "action": "Generate selected policies and install local specification and team state.",
+      "paths": [
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/agent/feature.py",
+        "scripts/configure_project.py",
+        "scripts/create_project.py",
+        "scripts/project_profile.py",
+        "templates/integrations/spec-kit/LICENSE",
+        "templates/integrations/spec-kit/plan-template.md.in",
+        "templates/integrations/spec-kit/spec-template.md.in",
+        "templates/integrations/spec-kit/tasks-template.md.in",
+        "templates/integrations/squad/LICENSE",
+        "templates/integrations/squad/casting/history.json",
+        "templates/integrations/squad/casting/policy.json",
+        "templates/integrations/squad/casting/registry-history.commit.json",
+        "templates/integrations/squad/casting/registry.json",
+        "tests/test_assurance.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_assurance.py",
+        "expected": "All assurance cases pass."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "Generate selected policies and install local specification and team state.",
+      "given": "A new financial web application selects Go.",
+      "when": "Run the interactive project creation and feature commands.",
+      "then": "The project contains scoped controls, guidance and feature documents.",
+      "paths": [
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/agent/feature.py",
+        "scripts/configure_project.py",
+        "scripts/create_project.py",
+        "scripts/project_profile.py",
+        "templates/integrations/spec-kit/LICENSE",
+        "templates/integrations/spec-kit/plan-template.md.in",
+        "templates/integrations/spec-kit/spec-template.md.in",
+        "templates/integrations/spec-kit/tasks-template.md.in",
+        "templates/integrations/squad/LICENSE",
+        "templates/integrations/squad/casting/history.json",
+        "templates/integrations/squad/casting/policy.json",
+        "templates/integrations/squad/casting/registry-history.commit.json",
+        "templates/integrations/squad/casting/registry.json",
+        "tests/test_assurance.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance.py::AssuranceTests::test_interview_builds_financial_project"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Generate selected policies and install local specification and team state.",
+      "given": "An invalid context was supplied.",
+      "when": "Run automated project creation.",
+      "then": "Setup fails before creating the destination.",
+      "paths": [
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/agent/feature.py",
+        "scripts/configure_project.py",
+        "scripts/create_project.py",
+        "scripts/project_profile.py",
+        "templates/integrations/spec-kit/LICENSE",
+        "templates/integrations/spec-kit/plan-template.md.in",
+        "templates/integrations/spec-kit/spec-template.md.in",
+        "templates/integrations/spec-kit/tasks-template.md.in",
+        "templates/integrations/squad/LICENSE",
+        "templates/integrations/squad/casting/history.json",
+        "templates/integrations/squad/casting/policy.json",
+        "templates/integrations/squad/casting/registry-history.commit.json",
+        "templates/integrations/squad/casting/registry.json",
+        "tests/test_assurance.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance.py::AssuranceTests::test_invalid_profile_preserves_destination"
+    }
+  ],
+  "pending": []
+}
