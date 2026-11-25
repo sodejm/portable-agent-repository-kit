@@ -123,9 +123,9 @@
     {
       "kind": "success",
       "entrypoint": "Resolve and verify the current scanner releases.",
-      "given": "The local gate provisions validation dependencies.",
+      "given": "A package resolver can select an obsolete pip-audit from an unconstrained requirement.",
       "when": "Resolve pip-audit and its companion tools.",
-      "then": "pip-audit can follow stable releases while the companion tools retain their pins.",
+      "then": "The requirement accepts pip-audit 2.10.1 and newer stable releases while the companion tools retain their pins.",
       "paths": [
         "tools/push_gate/requirements.txt",
         "tools/push_gate/checks.py",

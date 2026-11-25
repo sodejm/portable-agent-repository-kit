@@ -21,7 +21,7 @@ Policy is pinned to committed Git blob IDs. Any change under `tools/push_gate/` 
 
 Install native Semgrep using the instructions below and install Trivy from its official distribution. For `make assurance`, also install Gitleaks. The shared policy selects `latest` for all three. CI resolves stable releases from GitHub (Gitleaks and Trivy) and PyPI (Semgrep), verifies each downloaded artifact against its published SHA-256 digest and checks the installed scanner versions. The local push gate checks the installed Semgrep and Trivy versions against the same upstreams. An unavailable release service or stale local binary blocks the scan.
 
-Install Git, curl, Python >=3.11 and uv. The optional validation environment pins Ruff 0.17.6, Coverage 7.17.5 and Build 1.6.1. Each fresh gate environment resolves pip-audit from PyPI. Workflows, shell scripts and Dockerfiles also require actionlint, ShellCheck, bash and hadolint respectively when present.
+Install Git, curl, Python >=3.11 and uv. The optional validation environment pins Ruff 0.17.6, Coverage 7.17.5 and Build 1.6.1. Each fresh gate environment requests the latest compatible stable pip-audit from PyPI. The minimum is 2.10.1 because a hosted dependency scan selected 2.6.1 and reported vulnerable transitive dependencies. Workflows, shell scripts and Dockerfiles also require actionlint, ShellCheck, bash and hadolint respectively when present.
 
 The gate runs `make check` (contracts, adapters, template/workboard and skill
 tests), unittest branch coverage and pip-audit. Existing portable checks remain

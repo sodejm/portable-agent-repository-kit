@@ -66,7 +66,7 @@ class ScannerPinTests(unittest.TestCase):
             "build": "1.6.1",
         })
         guide = (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text(encoding="utf-8")
-        self.assertIn("pip-audit", requirements.splitlines())
+        self.assertIn("pip-audit>=2.10.1", requirements.splitlines())
         for version in pins.values():
             self.assertIn(version, guide)
         self.assertIn("Python >=3.11", guide)
