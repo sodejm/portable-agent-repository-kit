@@ -58,10 +58,13 @@ def scan(root, output):
         config.write_text("[extend]\nuseDefault = true\n", encoding="utf-8")
         ignore = private / "empty"
         ignore.touch()
+        policy = json.loads((snapshot / "tools/push_gate/policy.json").read_bytes())
+        selected = gate.required_version("gitleaks", policy, snapshot, env)
+        if gate.run(["gitleaks", "version"], snapshot, env=env).decode().strip() != selected:
+            raise ValueError(f"Required Gitleaks version: {selected}")
         for mode, options in (("git", ["--log-opts=HEAD"]), ("dir", [])):
             gate.run(["gitleaks", mode, "--redact=100", "--no-banner", "--ignore-gitleaks-allow",
                       "--gitleaks-ignore-path", str(ignore), "--config", str(config), *options, "."], snapshot, env=env)
-        policy = json.loads((snapshot / "tools/push_gate/policy.json").read_bytes())
         gate.scanners(snapshot, files, policy, env, private)
         if level != "low":
             report = private / "sbom.json"

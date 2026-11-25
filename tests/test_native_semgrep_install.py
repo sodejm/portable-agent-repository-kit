@@ -22,6 +22,7 @@ SPEC = importlib.util.spec_from_file_location(
 )
 INSTALL = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(INSTALL)
+VERSION = "9.8.7"
 
 
 def elf(needed=(), cpu=62):
@@ -90,19 +91,15 @@ class NativeInstallTests(unittest.TestCase):
         return hashlib.sha256(self.wheel.read_bytes()).hexdigest()
 
     def test_official_digests_and_documented_platforms(self):
-        """Keep all supplied artifact identities synchronized with the guide."""
-        self.assertEqual(INSTALL.VERSION, "1.187.0")
-        self.assertEqual(
-            INSTALL.WHEELS,
-            {
-                "macos-arm64": "a44a8f486719e69fe38c451c70b4808bed5532bbcb4c25a8dd04a74617dfcca0",
-                "linux-aarch64": "79f0a3dc63607fada4ae2225599ab5eef8005124a8484814184df72805afcfc0",
-                "linux-x86_64": "ad160ed527bd153b96616814366a6d17f451d37babf75df6705327aede0cc8bd",
-            },
-        )
-        guide = (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text()
-        for digest in INSTALL.WHEELS.values():
-            self.assertIn(digest, guide)
+        """Select the wheel and its published digest for each supported host."""
+        from test_scanner_pins import RELEASE, wheel
+
+        for target, platform in RELEASE.WHEEL_PLATFORMS.items():
+            with self.subTest(target=target):
+                item = wheel(platform)
+                metadata = {"info": {"version": "9.8.7"}, "urls": [item]}
+                self.assertEqual(RELEASE.artifact("semgrep", metadata, target),
+                                 {"version": "9.8.7", "url": item["url"], "sha256": "a" * 64})
 
     def test_platform_allowlist(self):
         """Reject translated macOS, Windows, musl and older glibc hosts."""
@@ -134,7 +131,7 @@ class NativeInstallTests(unittest.TestCase):
         self.wheel.write_bytes(b"not a ZIP archive")
         with patch.object(INSTALL.zipfile, "ZipFile") as parser:
             with self.assertRaisesRegex(INSTALL.InstallError, "SHA256"):
-                INSTALL.native_payload(self.wheel, "0" * 64, "linux-x86_64")
+                INSTALL.native_payload(self.wheel, "0" * 64, "linux-x86_64", VERSION)
             parser.assert_not_called()
 
     def test_dependency_closure_excludes_python_and_unused_libraries(self):
@@ -156,11 +153,11 @@ class NativeInstallTests(unittest.TestCase):
                         ("semgrep/bin/unused.so", b"must not even parse"),
                         ("semgrep/main.py", b"raise RuntimeError('must not execute')"),
                         ("mcp/__init__.py", b"must not install"),
-                        ("semgrep-1.187.0.dist-info/METADATA", b"Requires-Dist: mcp"),
+                        ("semgrep-9.8.7.dist-info/METADATA", b"Requires-Dist: mcp"),
                     ]
                 )
                 self.assertEqual(
-                    INSTALL.native_payload(self.wheel, digest, target),
+                    INSTALL.native_payload(self.wheel, digest, target, VERSION),
                     {
                         INSTALL.ENGINE: engine,
                         "semgrep.libs/libfixture.so": library,
@@ -172,12 +169,12 @@ class NativeInstallTests(unittest.TestCase):
         engine = elf(["libfixture.so"])
         library = elf()
         members = [
-            (f"semgrep-{INSTALL.VERSION}.data/purelib/{INSTALL.ENGINE}", engine),
+            (f"semgrep-{VERSION}.data/purelib/{INSTALL.ENGINE}", engine),
             ("semgrep.libs/libfixture.so", library),
         ]
         digest = self.wheel_bytes(members)
         self.assertEqual(
-            INSTALL.native_payload(self.wheel, digest, "linux-x86_64"),
+            INSTALL.native_payload(self.wheel, digest, "linux-x86_64", VERSION),
             {INSTALL.ENGINE: engine, "semgrep.libs/libfixture.so": library},
         )
 
@@ -213,13 +210,13 @@ class NativeInstallTests(unittest.TestCase):
             "C:drive",
             "line\nbreak",
             INSTALL.ENGINE,
-            f"semgrep-{INSTALL.VERSION}.data/purelib/{INSTALL.ENGINE}",
+            f"semgrep-{VERSION}.data/purelib/{INSTALL.ENGINE}",
             link,
         ):
             with self.subTest(name=str(name)):
                 digest = self.wheel_bytes([(INSTALL.ENGINE, elf()), (name, b"unsafe")])
                 with self.assertRaises(INSTALL.InstallError):
-                    INSTALL.native_payload(self.wheel, digest, "linux-x86_64")
+                    INSTALL.native_payload(self.wheel, digest, "linux-x86_64", VERSION)
 
     def test_missing_ambiguous_malformed_and_wrong_architecture_fail(self):
         """No dependency lookup may silently fall back to an unbundled library."""
@@ -237,7 +234,7 @@ class NativeInstallTests(unittest.TestCase):
             with self.subTest(members=len(members)):
                 digest = self.wheel_bytes(members)
                 with self.assertRaises((INSTALL.InstallError, struct.error)):
-                    INSTALL.native_payload(self.wheel, digest, "linux-x86_64")
+                    INSTALL.native_payload(self.wheel, digest, "linux-x86_64", VERSION)
 
     def test_publish_native_identity_manifest_and_no_python(self):
         """Both native names share an inode and a deterministic payload manifest."""
@@ -246,14 +243,13 @@ class NativeInstallTests(unittest.TestCase):
         )
         destination = self.root / "new-native"
         result = subprocess.CompletedProcess(
-            [], 0, b"semgrep-core version: 1.187.0 (a5341ae595)\n", b""
+            [], 0, b"semgrep-core version: 9.8.7 (a5341ae595)\n", b""
         )
         with (
             patch.object(INSTALL, "host_platform", return_value="linux-x86_64"),
-            patch.dict(INSTALL.WHEELS, {"linux-x86_64": digest}),
             patch.object(INSTALL.subprocess, "run", return_value=result) as run,
         ):
-            INSTALL.install(self.wheel, destination)
+            INSTALL.install(self.wheel, destination, VERSION, digest)
         engine = destination / INSTALL.ENGINE
         alias = engine.with_name("osemgrep")
         self.assertEqual(engine.stat().st_ino, alias.stat().st_ino)
@@ -280,13 +276,12 @@ class NativeInstallTests(unittest.TestCase):
         digest = self.wheel_bytes([(INSTALL.ENGINE, elf())])
         destination = self.root / "never-created"
         for result in (
-            subprocess.CompletedProcess([], 0, b"wrapper 1.187.0", b"private"),
-            subprocess.CompletedProcess([], 1, b"1.187.0", b"private"),
+            subprocess.CompletedProcess([], 0, b"wrapper 9.8.7", b"private"),
+            subprocess.CompletedProcess([], 1, b"9.8.7", b"private"),
             OSError("private"),
         ):
             with (
                 patch.object(INSTALL, "host_platform", return_value="linux-x86_64"),
-                patch.dict(INSTALL.WHEELS, {"linux-x86_64": digest}),
                 patch.object(
                     INSTALL.subprocess,
                     "run",
@@ -295,7 +290,7 @@ class NativeInstallTests(unittest.TestCase):
                 ),
             ):
                 with self.assertRaises((INSTALL.InstallError, OSError)):
-                    INSTALL.install(self.wheel, destination)
+                    INSTALL.install(self.wheel, destination, VERSION, digest)
             self.assertFalse(destination.exists())
             self.assertFalse(list(self.root.glob(".park-semgrep-*")))
 
@@ -306,11 +301,10 @@ class NativeInstallTests(unittest.TestCase):
         destination.symlink_to(self.root / "missing")
         with (
             patch.object(INSTALL, "host_platform", return_value="linux-x86_64"),
-            patch.dict(INSTALL.WHEELS, {"linux-x86_64": digest}),
             patch.object(INSTALL.subprocess, "run") as run,
         ):
             with self.assertRaises(INSTALL.InstallError):
-                INSTALL.install(self.wheel, destination)
+                INSTALL.install(self.wheel, destination, VERSION, digest)
             run.assert_not_called()
         self.assertTrue(destination.is_symlink())
         self.assertEqual(os.readlink(destination), str(self.root / "missing"))

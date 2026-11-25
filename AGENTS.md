@@ -55,13 +55,11 @@ When a user starts a new project from a marked template clone, guide them throug
 - Do not push, open or merge a pull request, publish, deploy, or mutate a hosted
   service unless the user or project workflow authorizes that transition.
 - Never push directly to the default branch unless explicitly authorized.
-- Before any push attempt, verify pinned security-tool versions against official
-  latest stable releases. Update stale pins, related guidance and tests; review
-  compatibility/security impact and run affected validation. Commit the reviewed
-  update, refresh any installed trusted gate, and verify the executables selected
-  by the push environment match the pins before pushing. Do not downgrade tools
-  to satisfy stale pins, bypass hooks or weaken checks. If release verification,
-  a safe upgrade or validation is blocked, report that before attempting a push.
+- Use the latest stable scanner release from its official upstream. Hosted setup
+  verifies the selected artifacts against published SHA-256 digests. The local
+  gate checks installed scanner versions at run time. Upgrade stale executables
+  and rerun the gate when a release changes. Keep workflow actions pinned to
+  reviewed commits and refresh the trusted hook when its implementation changes.
 - Do not describe work as shipped merely because it was committed or pushed.
 
 ## Validation

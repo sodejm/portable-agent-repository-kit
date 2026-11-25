@@ -19,9 +19,9 @@ Policy is pinned to committed Git blob IDs. Any change under `tools/push_gate/` 
 
 ## Prerequisites and checks
 
-Install native Semgrep **1.187.0** as described below and Trivy **0.76.2** from its official distribution; the gate rejects other versions. Also install Git, Python >=3.11 and uv. `tools/push_gate/requirements.txt` pins direct Python validation dependencies; project dependency locks and canonical manifests govern project installs. Transitive validation dependencies are resolved by uv and are not a fully frozen toolchain. Network/package/provider access and sufficient temporary disk space are required for full gate validation. When relevant files exist, install actionlint, ShellCheck, bash and hadolint: all workflows, tracked shell scripts and Dockerfiles are checked. Missing tools fail closed. Scanner overrides inherited from the caller are removed.
+Install native Semgrep using the instructions below and install Trivy from its official distribution. For `make assurance`, also install Gitleaks. The shared policy selects `latest` for all three. CI resolves stable releases from GitHub (Gitleaks and Trivy) and PyPI (Semgrep), verifies each downloaded artifact against its published SHA-256 digest and checks the installed scanner versions. The local push gate checks the installed Semgrep and Trivy versions against the same upstreams. An unavailable release service or stale local binary blocks the scan.
 
-Scanner pins refreshed on 2026-11-24 against the latest stable official [Semgrep release](https://github.com/semgrep/semgrep/releases/tag/v1.187.0) and [Trivy release](https://github.com/aquasecurity/trivy/releases/tag/v0.76.2). Python validation dependencies were checked against PyPI on 2026-11-23: Ruff 0.17.6, Coverage 7.17.5, Build 1.6.1, and pip-audit 2.10.1. Coverage 7.17 requires Python 3.11 or newer, raising the optional gate's prerequisite without changing the portable standard-library checks. Refreshing pins requires rerunning validation and reinstalling the committed policy; it does not change scanner rules or severity thresholds. Scanner doubles in the gate regression suite use synthetic version fixtures; `tests/test_scanner_pins.py` checks the real reviewed pins and this guide.
+Install Git, curl, Python >=3.11 and uv. The optional validation environment pins Ruff 0.17.6, Coverage 7.17.5 and Build 1.6.1. Each fresh gate environment resolves pip-audit from PyPI. Workflows, shell scripts and Dockerfiles also require actionlint, ShellCheck, bash and hadolint respectively when present.
 
 The gate runs `make check` (contracts, adapters, template/workboard and skill
 tests), unittest branch coverage and pip-audit. Existing portable checks remain
@@ -31,26 +31,12 @@ Every profile also validates the gate with Ruff lint/format and its disposable G
 
 ### Native Semgrep installation
 
-Obtain the official 1.187.0 wheel separately, without installing it or resolving
-Python dependencies. The offline, standard-library installer accepts only these
-SHA256 identities, supplied for the reviewed release:
-
-| Host / supplied wheel platform | SHA256 |
-| --- | --- |
-| Native macOS ARM64 | `a44a8f486719e69fe38c451c70b4808bed5532bbcb4c25a8dd04a74617dfcca0` |
-| Linux ARM64 / `manylinux_2_34_aarch64` | `79f0a3dc63607fada4ae2225599ab5eef8005124a8484814184df72805afcfc0` |
-| Linux x86_64 / `manylinux_2_34_x86_64` | `ad160ed527bd153b96616814366a6d17f451d37babf75df6705327aede0cc8bd` |
-
-Linux requires glibc >=2.34. Intel macOS, Rosetta/x86_64 macOS processes,
-Windows, musl Linux and other architectures are unsupported by this installer.
-The portable `make check` does not require a supported scanner host. Do not use
-an older scanner pin or a Python fallback to work around this boundary.
-
-Choose a **new directory** in a trusted, existing parent. For example:
+The installer resolves the latest stable Semgrep wheel for native macOS ARM64 or Linux ARM64/x86_64 with glibc >=2.34. Use a fresh destination under a trusted parent for each upgrade. Set PATH to the new installation after verification. Supply a local wheel path in place of `latest` to verify existing bytes against the current PyPI digest.
 
 ```sh
-python3 -I -S tools/push_gate/install_native_semgrep.py /path/to/official-semgrep.whl "$HOME/.local/park-semgrep-native-1.187.0"
-export PATH="$HOME/.local/park-semgrep-native-1.187.0/semgrep/bin:$PATH"
+mkdir -p "$HOME/.local"
+python3 -I -S tools/push_gate/install_native_semgrep.py latest "$HOME/.local/park-semgrep-native"
+export PATH="$HOME/.local/park-semgrep-native/semgrep/bin:$PATH"
 semgrep-core -version
 PARK_NATIVE_SEMGREP=1 python3 tests/test_scanner_reachability.py -v
 ```
@@ -82,20 +68,9 @@ The opt-in test above exercises matching in each declared target extension,
 inline Semgrep suppression and nested ignore handling, with Python launchers
 replaced by traps. It does not exercise a real push or Trivy's live database.
 
-### Required pre-push pin preflight
+### Checking a scanner update
 
-Before any push attempt, verify the latest stable releases of pinned security
-tools against their official upstream release sources. Update stale pins and
-their installation guidance and tests, review compatibility and security impact,
-then run the affected checks. Commit the reviewed update and refresh the installed
-trusted gate before attempting the push. Verify the executables selected by the
-actual push environment match the committed pins. A package-manager version alone
-is insufficient when a CLI delegates to another executable on PATH.
-
-Do not downgrade tools to satisfy stale pins, bypass hooks, or weaken scanner
-rules/severity thresholds. If release verification, a safe upgrade or required
-validation is unavailable, report the blocker before pushing. This preflight is
-an agent workflow requirement, not a claim that the hook queries upstream releases.
+Run `python3 -I -S tools/push_gate/scanner_release.py trivy version` to inspect the selected version. Substitute `gitleaks` or `semgrep` to inspect another scanner. The `artifact` operation also prints its download URL and SHA-256. Local upgrades take effect when the corresponding executables are on the push PATH. New stable releases need no repository edit. The gate exercises the scanner CLI and validates its report, so a changed interface or missing release asset produces a visible failure.
 
 ## Security rules and reproducibility
 
@@ -119,7 +94,7 @@ pip-audit remains separate from scanner provenance and native dependency review.
 
 `semgrep.yml` is a committed, reviewed small ruleset covering high-confidence Python command/deserialization hazards, JavaScript/TypeScript dynamic execution and TLS verification, Go shell/TLS hazards, shell TLS bypasses, workflow insecure Node overrides and Terraform TLS bypasses. Language-specific AST rules are used where supported; generic shell/workflow/HCL rules deliberately have narrower coverage. Rules are local; no mutable registry rules are downloaded. Inline Semgrep suppression and repository ignore files cannot hide findings. The native ignore option takes a basename: the gate reserves `.park-semgrep-ignore` as every path component at every depth, rejects committed collisions (including case-folded aliases) before scanning, and creates its own empty root file. Targets retain their `./` prefix. Missing/malformed JSON and any reported parser/analysis error fail the gate. This ruleset is not an exhaustive vulnerability audit.
 
-Trivy scans the complete committed filesystem for vulnerabilities, secrets and misconfiguration, including development dependencies. HIGH and CRITICAL findings block, including suppressed findings returned by Trivy. The runner supplies empty config/ignore paths, rejects inline Trivy suppression and does not use `--ignore-unfixed`. Secret matches are never printed by the scanner wrapper; only finding IDs and paths appear. Raw reports are temporary and removed after execution. Trivy's vulnerability database and official misconfiguration checks update independently of the pinned executable. Results are reproducible for the same rules, tool versions and feed/cache state, not forever across changing advisories. An unavailable feed or scanner error blocks; do not suppress findings to publish.
+Trivy scans the complete committed filesystem for vulnerabilities, secrets and misconfiguration, including development dependencies. HIGH and CRITICAL findings block, including suppressed findings returned by Trivy. The runner supplies empty config/ignore paths, rejects inline Trivy suppression and does not use `--ignore-unfixed`. Secret matches are never printed by the scanner wrapper; only finding IDs and paths appear. Raw reports are temporary and removed after execution. Trivy's vulnerability database and official misconfiguration checks update independently of the scanner release. Results are reproducible for the same rules, tool versions and feed/cache state, not forever across changing advisories. An unavailable feed or scanner error blocks; do not suppress findings to publish.
 
 ## Branch-wide test development
 

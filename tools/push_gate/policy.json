@@ -2,8 +2,9 @@
   "default_branch": "main",
   "session_handoffs": true,
   "tools": {
-    "semgrep": "1.187.0",
-    "trivy": "0.76.2"
+    "gitleaks": "latest",
+    "semgrep": "latest",
+    "trivy": "latest"
   },
   "test_areas": [
     {

@@ -2,13 +2,13 @@
 
 ## Current installation boundary (2026-11-24)
 
-The supported scanner setup now extracts the pinned official Semgrep 1.187.0
+The supported scanner setup now extracts the latest stable official Semgrep
 native engine and its linked bundled libraries without installing wheel Python
-code or resolving Python dependency packages. The offline installer verifies the
+code or resolving Python dependency packages. The installer verifies the
 complete wheel SHA256 before parsing and fails closed on unsafe entries, unknown
 dependencies, unsupported hosts or an inexact raw engine version. See the
 [installation guide](../LOCAL_PUSH_GATE.md#native-semgrep-installation) for the
-three artifact digests, platform requirements and migration procedure.
+release lookup, platform requirements and upgrade procedure.
 
 The gate probes `semgrep-core -version` directly, requires `osemgrep` to be the
 same file, and uses `osemgrep scan --experimental` with stdout JSON. There is no
@@ -32,9 +32,9 @@ This is a **new installation**, not a patch to an old venv. The old environment
 retains its findings until separately retired; no CVE is suppressed or audit
 result reclassified. Neither Python package audits nor this extraction establish
 the safety of native binaries, bundled/system libraries, parser inputs, other
-tools or a compromised local account. The supplied digests pin source bytes;
+tools or a compromised local account. The release service supplies the digests for each run;
 they are not an independent provenance proof. PATH, tools and installation parent
-directories must remain trusted. Review new releases and artifacts again on update.
+directories must remain trusted. The release service and publisher are trusted at installation time.
 
 Ordinary regressions use synthetic ELF/Mach-O wheels and scanner doubles. They
 cover selected dependency closure, rejected ZIP paths/types/digests/platforms,

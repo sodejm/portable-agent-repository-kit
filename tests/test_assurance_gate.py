@@ -26,7 +26,7 @@ class AssuranceGateTests(unittest.TestCase):
         self.git("init", "-q")
         for directory in (".park", ".github", "tools/push_gate"):
             (self.root / directory).mkdir(parents=True)
-        (self.root / "tools/push_gate/policy.json").write_text("{}")
+        (self.root / "tools/push_gate/policy.json").write_text('{"tools":{"gitleaks":"9.8.7"}}')
         (self.root / ".github/review-policy.json").write_text('{"require_independent_review": true}')
         self.output = Path(self.temp.name) / "output"
 
@@ -51,6 +51,8 @@ class AssuranceGateTests(unittest.TestCase):
             if argv[0] == "git":
                 return original(argv, cwd, **kwargs)
             commands.append(argv[:2])
+            if argv == ["gitleaks", "version"]:
+                return b"9.8.7"
             if argv[0] == "trivy":
                 Path(argv[argv.index("--output") + 1]).write_text('{"bomFormat": "CycloneDX"}')
             return b""
@@ -61,7 +63,7 @@ class AssuranceGateTests(unittest.TestCase):
                     commands.clear()
                     self.commit_level(level)
                     assurance.scan(self.root, self.output)
-                    self.assertEqual(commands[:2], [["gitleaks", "git"], ["gitleaks", "dir"]])
+                    self.assertEqual(commands[:3], [["gitleaks", "version"], ["gitleaks", "git"], ["gitleaks", "dir"]])
                     self.assertEqual(baseline.call_count, index + 1)
                     self.assertEqual(["trivy", "fs"] in commands, level != "low")
                     self.assertEqual((self.output / "sbom.cdx.json").exists(), level != "low")
@@ -72,6 +74,8 @@ class AssuranceGateTests(unittest.TestCase):
         original = assurance.gate.run
 
         def fail_secret_scan(argv, cwd, **kwargs):
+            if argv == ["gitleaks", "version"]:
+                return b"9.8.7"
             if argv[0] == "gitleaks":
                 raise assurance.gate.GateError("synthetic secret finding")
             return original(argv, cwd, **kwargs)
@@ -94,31 +98,27 @@ class AssuranceGateTests(unittest.TestCase):
 
     def test_ci_uses_policy_scanner_version(self):
         """Exercise wheel selection without fetching archives or installing tools."""
-        version = "9.8.7"
-        (self.root / "tools/push_gate/policy.json").write_text(
-            json.dumps({"tools": {"semgrep": version}})
-        )
         shell_setup = self.root / "test-shell"
-        shell_setup.write_text(
-            'curl() { :; }\n'
-            'sha256sum() { cat >/dev/null; }\n'
-            'tar() { :; }\n'
-            'python3() {\n'
-            '  case "$1" in\n'
-            '    -c) command python3 "$@" ;;\n'
-            '    -m) printf "%s\\n" "$@" > "$GITHUB_WORKSPACE/pip-args" ;;\n'
-            '    */install_native_semgrep.py) : ;;\n'
-            '    *) return 1 ;;\n'
-            '  esac\n'
-            '}\n'
-        )
-        subprocess.run(
-            ["bash", str(ROOT / "scripts/ci/install_assurance_tools.sh")],
-            env={**os.environ, "BASH_ENV": str(shell_setup), "RUNNER_TEMP": self.temp.name,
-                 "GITHUB_WORKSPACE": str(self.root), "GITHUB_PATH": str(self.root / "runner-path")},
-            check=True,
-        )
-        self.assertIn(f"semgrep=={version}", (self.root / "pip-args").read_text().splitlines())
+        shell_setup.write_text("""curl() { :; }
+sha256sum() { cat >/dev/null; test -z "$FAIL_HASH"; }
+tar() { echo extracted >> "$GITHUB_WORKSPACE/calls"; }
+python3() {
+    echo "$4 $5" >> "$GITHUB_WORKSPACE/calls"
+    echo '{"url":"https://example.invalid/archive","sha256":"fixture","version":"9.8.7"}'
+}
+""")
+        env = {**os.environ, "BASH_ENV": str(shell_setup), "RUNNER_TEMP": self.temp.name,
+               "GITHUB_WORKSPACE": str(self.root), "GITHUB_PATH": str(self.root / "runner-path"), "FAIL_HASH": ""}
+        command = ["bash", str(ROOT / "scripts/ci/install_assurance_tools.sh")]
+        calls = self.root / "calls"
+        subprocess.run(command, env=env, check=True, capture_output=True)
+        lines = calls.read_text().splitlines()
+        self.assertEqual(lines[:4], ["gitleaks artifact", "extracted", "trivy artifact", "extracted"])
+        self.assertTrue(lines[4].startswith("latest "))
+        calls.unlink()
+        result = subprocess.run(command, env={**env, "FAIL_HASH": "1"}, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(calls.read_text().splitlines(), ["gitleaks artifact"])
 
     def test_critical_owner_needs_separate_reviewer(self):
         """Apply exact-head approval rules to the owner as well as contributors."""

@@ -38,6 +38,23 @@ class PolicyTests(unittest.TestCase):
         )
         self.assertTrue(GATE.executable_test("a.test.ts", "", "expect(result).toBe(2)"))
 
+    def test_latest_requires_current_native_engine(self):
+        """Block scanning with a stale binary when upstream publishes a new release."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with (
+                patch.object(
+                    GATE,
+                    "run",
+                    side_effect=[b"semgrep-core version: 1.0.0 (a5341ae595)", b"2.0.0"],
+                ) as run,
+                patch.object(GATE, "scanner_run") as scan,
+                self.assertRaisesRegex(GATE.GateError, "2.0.0"),
+            ):
+                GATE.scanners(root, [], {"tools": {"semgrep": "latest"}}, {}, root)
+            self.assertEqual(run.call_args.args[0][-2:], ["semgrep", "version"])
+            scan.assert_not_called()
+
     def test_unsupported_and_default_updates_fail(self):
         """Reject default-branch updates, tags and deletions before execution."""
         sha = "a" * 40

@@ -1,5 +1,6 @@
-"""Keep reviewed scanner pins and contributor installation guidance synchronized."""
+"""Check scanner release selection, tool policy and installation guidance."""
 
+import importlib.util
 import json
 import unittest
 from pathlib import Path
@@ -8,28 +9,64 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-class ScannerPinTests(unittest.TestCase):
-    """Validate the reviewed release pair offline, without querying a mutable feed."""
+SPEC = importlib.util.spec_from_file_location("scanner_release", ROOT / "tools/push_gate/scanner_release.py")
+RELEASE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(RELEASE)
 
-    def test_reviewed_scanner_releases_match_installation_guide(self) -> None:
-        """Require both approved versions and their upstream release references."""
-        policy = json.loads((ROOT / "tools/push_gate/policy.json").read_text(encoding="utf-8"))
-        self.assertEqual(policy["tools"], {"semgrep": "1.187.0", "trivy": "0.76.2"})
-        guide = (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text(encoding="utf-8")
-        for name, version in policy["tools"].items():
-            with self.subTest(scanner=name):
-                self.assertIn(f"**{version}**", guide)
-                self.assertIn(f"/releases/tag/v{version}", guide)
+
+def wheel(platform):
+    """Build release metadata for a synthetic wheel."""
+    name = f"semgrep-9.8.7-py3-none-{platform}.whl"
+    return dict(packagetype="bdist_wheel", yanked=False, filename=name,
+                url=f"https://files.pythonhosted.org/packages/{name}", digests={"sha256": "a" * 64})
+
+
+class ScannerPinTests(unittest.TestCase):
+    """Exercise stable release selection against synthetic upstream responses."""
+
+    def test_reviewed_scanner_releases_match_installation_guide(self):
+        """Use latest for each scanner and document the shared selector."""
+        policy = json.loads((ROOT / "tools/push_gate/policy.json").read_text())
+        self.assertEqual(policy["tools"], dict.fromkeys(("gitleaks", "semgrep", "trivy"), "latest"))
+        self.assertIn("latest", (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text())
+
+    def test_release_archive_identity(self):
+        """Require the correct release asset, provider URL and digest."""
+        for tool, (repo, pattern) in RELEASE.GITHUB.items():
+            name = pattern.format("9.8.7")
+            url = f"https://github.com/{repo}/releases/download/v9.8.7/{name}"
+            item = dict(name=name, browser_download_url=url, digest="sha256:" + "a" * 64)
+            data = dict(tag_name="v9.8.7", draft=False, prerelease=False, assets=[item])
+            self.assertEqual(RELEASE.artifact(tool, data, "linux-x86_64"),
+                             {"version": "9.8.7", "url": url, "sha256": "a" * 64})
+            with self.assertRaises(ValueError):
+                RELEASE.artifact(tool, data, "macos-arm64")
+            for delta in (dict(draft=True), dict(prerelease=True), dict(assets=[]),
+                          dict(assets=[item, item]), dict(assets=[dict(item, digest=None)]),
+                          dict(assets=[dict(item, browser_download_url="https://example.invalid")])):
+                with self.subTest(tool=tool, delta=delta), self.assertRaises(ValueError):
+                    RELEASE.artifact(tool, {**data, **delta}, "linux-x86_64")
+
+    def test_invalid_wheel_identity(self):
+        """Reject withdrawn, redirected, unsupported or digestless distributions."""
+        item = wheel("manylinux_2_34_x86_64")
+        for delta in (dict(yanked=True), dict(url="https://example.invalid"),
+                      dict(digests={"sha256": ""}), dict(filename="other.whl")):
+            with self.subTest(delta=delta), self.assertRaises(ValueError):
+                RELEASE.artifact("semgrep", {"info": {"version": "9.8.7"}, "urls": [dict(item, **delta)]}, "linux-x86_64")
+        with self.assertRaises(ValueError):
+            RELEASE.release_version("semgrep", {"info": {"version": "9.8.7rc1"}})
 
     def test_validation_dependencies_match_reviewed_releases_and_guide(self) -> None:
         """Keep the optional toolchain and its Python prerequisite documented."""
         requirements = (ROOT / "tools/push_gate/requirements.txt").read_text(encoding="utf-8")
-        pins = dict(line.split("==") for line in requirements.splitlines() if line)
+        pins = dict(line.split("==") for line in requirements.splitlines() if "==" in line)
         self.assertEqual(pins, {
             "ruff": "0.17.6", "coverage": "7.17.5",
-            "build": "1.6.1", "pip-audit": "2.10.1",
+            "build": "1.6.1",
         })
         guide = (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text(encoding="utf-8")
+        self.assertIn("pip-audit", requirements.splitlines())
         for version in pins.values():
             self.assertIn(version, guide)
         self.assertIn("Python >=3.11", guide)
