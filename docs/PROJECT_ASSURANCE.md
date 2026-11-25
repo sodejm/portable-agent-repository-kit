@@ -17,7 +17,7 @@ The offline scaffold uses [Spec Kit v1.4.4](https://github.com/github/spec-kit/t
 | High | On a manual run from the default branch, package the source on a GitHub-hosted runner, attest the archive and verify its digest, source commit, repository and signing workflow. | A verified source archive and signed provenance. |
 | Critical | Require a qualified reviewer distinct from the PR author, a protected release environment with self-review and admin bypass disabled, and a successful recovery exercise within 90 days. | Exact-head PR approval, environment approval and a dated recovery record. |
 
-Run `make check` for the offline contract and test suite. Run `make assurance` to scan the current commit with Gitleaks 8.30.1 and the [pinned native Semgrep and Trivy tools](LOCAL_PUSH_GATE.md). Trivy needs vulnerability data. Scanner unavailability fails the job. Add language-specific checks to `make check` when adding a toolchain. Inspect the bundled Semgrep rules for coverage of your stack, especially when selecting a language without a dedicated rule.
+Run `make check` for the offline contract and test suite. Run `make assurance` to scan the current commit with Gitleaks 8.30.1 and the [pinned native Semgrep and Trivy tools](LOCAL_PUSH_GATE.md). Hosted CI reads the Semgrep version from the same policy as the local gate and verifies the downloaded wheel against the reviewed digest. Trivy needs vulnerability data. Scanner unavailability fails the job. Add language-specific checks to `make check` when adding a toolchain. Inspect the bundled Semgrep rules for coverage of your stack, especially when selecting a language without a dedicated rule.
 
 ## Activate hosted enforcement
 

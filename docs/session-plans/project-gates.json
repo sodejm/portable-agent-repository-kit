@@ -74,6 +74,19 @@
       ],
       "runner": "unittest",
       "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_critical_owner_needs_separate_reviewer"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Provision security scanners in the hosted job.",
+      "given": "The policy specifies the reviewed native Semgrep release.",
+      "when": "Run the hosted installer against a controlled provider.",
+      "then": "The wheel request uses the exact version from the policy.",
+      "paths": [
+        "scripts/ci/install_assurance_tools.sh",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_ci_uses_policy_scanner_version"
     }
   ],
   "pending": []

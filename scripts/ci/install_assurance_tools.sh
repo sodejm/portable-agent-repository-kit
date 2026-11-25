@@ -14,6 +14,8 @@ fetch_binary https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitl
     551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb gitleaks
 fetch_binary https://github.com/aquasecurity/trivy/releases/download/v0.76.2/trivy_0.76.2_Linux-64bit.tar.gz \
     bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf trivy
-python3 -m pip --isolated download --no-deps --only-binary=:all: --dest "$work" semgrep==1.186.0
+semgrep_version=$(python3 -c 'import json, sys; print(json.load(sys.stdin)["tools"]["semgrep"])' \
+    < "$GITHUB_WORKSPACE/tools/push_gate/policy.json")
+python3 -m pip --isolated download --no-deps --only-binary=:all: --dest "$work" "semgrep==$semgrep_version"
 python3 "$GITHUB_WORKSPACE/tools/push_gate/install_native_semgrep.py" "$work"/semgrep-*.whl "$work/native"
 printf '%s\n' "$work/bin" "$work/native/semgrep/bin" >> "${GITHUB_PATH:?}"

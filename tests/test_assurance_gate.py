@@ -2,6 +2,7 @@
 
 import datetime as dt
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -90,6 +91,34 @@ class AssuranceGateTests(unittest.TestCase):
         (self.root / ".github/review-policy.json").write_text("{}")
         with self.assertRaises(ValueError):
             assurance.tier(self.root)
+
+    def test_ci_uses_policy_scanner_version(self):
+        """Exercise wheel selection without fetching archives or installing tools."""
+        version = "9.8.7"
+        (self.root / "tools/push_gate/policy.json").write_text(
+            json.dumps({"tools": {"semgrep": version}})
+        )
+        shell_setup = self.root / "test-shell"
+        shell_setup.write_text(
+            'curl() { :; }\n'
+            'sha256sum() { cat >/dev/null; }\n'
+            'tar() { :; }\n'
+            'python3() {\n'
+            '  case "$1" in\n'
+            '    -c) command python3 "$@" ;;\n'
+            '    -m) printf "%s\\n" "$@" > "$GITHUB_WORKSPACE/pip-args" ;;\n'
+            '    */install_native_semgrep.py) : ;;\n'
+            '    *) return 1 ;;\n'
+            '  esac\n'
+            '}\n'
+        )
+        subprocess.run(
+            ["bash", str(ROOT / "scripts/ci/install_assurance_tools.sh")],
+            env={**os.environ, "BASH_ENV": str(shell_setup), "RUNNER_TEMP": self.temp.name,
+                 "GITHUB_WORKSPACE": str(self.root), "GITHUB_PATH": str(self.root / "runner-path")},
+            check=True,
+        )
+        self.assertIn(f"semgrep=={version}", (self.root / "pip-args").read_text().splitlines())
 
     def test_critical_owner_needs_separate_reviewer(self):
         """Apply exact-head approval rules to the owner as well as contributors."""
