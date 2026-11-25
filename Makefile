@@ -20,7 +20,7 @@ check:
 
 .PHONY: init feature
 init:
-	@if test -f .portable-agent-template; then python3 scripts/configure_project.py --interactive; elif test -f .park/profile.json; then echo "Project initialized. See .specify/memory/constitution.md"; else echo "Project profile missing" >&2; exit 1; fi
+	@if test -f .portable-agent-template; then python3 scripts/configure_project.py --interactive; elif test -f .park/profile.json; then echo "Project initialized. See .specify/memory/constitution.md and run make assurance to scan the current commit."; else echo "Project profile missing" >&2; exit 1; fi
 
 export NAME
 feature:

@@ -1,0 +1,52 @@
+{
+  "stage": "implementation",
+  "request": "Explain when to run the security scan during project setup.",
+  "scope": "The first-run interview and subsequent make init invocations.",
+  "setup": "Use a marked template checkout with Python, Git and Make.",
+  "constraints": "Scan committed files and preserve the one-time setup behavior.",
+  "steps": [
+    {
+      "action": "Show the next assurance command after successful setup and on a repeat invocation.",
+      "paths": [
+        "Makefile",
+        "scripts/configure_project.py",
+        "tests/test_template.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_template.py -k test_make_init",
+        "expected": "A completed setup explains how to scan a commit. An interrupted setup preserves the original files."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "make init",
+      "given": "A fresh, marked template clone.",
+      "when": "Initialize the project and run make init a second time.",
+      "then": "The first run tells the user to commit before scanning. The second points to the current commit and preserves the profile.",
+      "paths": [
+        "Makefile",
+        "scripts/configure_project.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_make_init_configures_template_once"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "make init",
+      "given": "A fresh, marked template clone.",
+      "when": "Submit incomplete or invalid setup answers.",
+      "then": "Setup fails, keeps the marker and original files, and omits the post-commit instructions.",
+      "paths": [
+        "Makefile",
+        "scripts/configure_project.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_make_init_requires_complete_answers"
+    }
+  ],
+  "pending": []
+}

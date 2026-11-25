@@ -1,0 +1,71 @@
+{
+  "stage": "implementation",
+  "request": "Make the GitHub template and skill workflow easier to discover, use make init in the quick start, and update the GitHub listing.",
+  "scope": "The README, setup and compatibility guides, documentation index and GitHub listing. Both setup entry points use the project assurance interview.",
+  "setup": "Use a fresh checkout of PARK. Run the quick start in a separate marked template copy with Python, Git and Make.",
+  "constraints": "Preserve the flag-based setup interface and one-time marker. Keep product-specific discovery limits. Manage GitHub description and topics through the repository settings.",
+  "steps": [
+    {
+      "action": "Use the existing project assurance interview for make init. Collect and validate all answers before writing project files.",
+      "paths": [
+        "Makefile",
+        "scripts/configure_project.py",
+        "tests/test_template.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_template.py -k test_make_init",
+        "expected": "A marked copy configures once. Interrupted input and an invalid license preserve the template."
+      }
+    },
+    {
+      "action": "Lead with the GitHub template workflow, link the local alternative and show how to synchronize a canonical skill into Claude Code.",
+      "paths": [
+        "README.md",
+        "docs/GETTING_STARTED.md",
+        "docs/COMPATIBILITY.md",
+        "docs/INDEX.md",
+        "docs/REPOSITORY_LAYOUT.md"
+      ],
+      "verify": {
+        "command": "make check",
+        "expected": "The repository contract, Markdown links, skill copies and applicable test suites pass."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "make init in the README quick start",
+      "given": "A fresh marked GitHub template copy.",
+      "when": "Enter a project name, description, languages and workload contexts, accept the suggested assurance level, and choose a license.",
+      "then": "The profile, constitution, README and license reflect the answers. The marker is removed and a second invocation reports completed setup without changing the project.",
+      "paths": [
+        "Makefile",
+        "scripts/configure_project.py",
+        "tests/test_template.py",
+        "README.md",
+        "docs/GETTING_STARTED.md",
+        "docs/COMPATIBILITY.md",
+        "docs/INDEX.md",
+        "docs/REPOSITORY_LAYOUT.md"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_make_init_configures_template_once"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "make init with incomplete or invalid answers",
+      "given": "An unconfigured copy containing the original README and license.",
+      "when": "End the input early or submit an unsupported license.",
+      "then": "The command exits unsuccessfully and preserves both files and the marker.",
+      "paths": [
+        "Makefile",
+        "scripts/configure_project.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_make_init_requires_complete_answers"
+    }
+  ],
+  "pending": []
+}

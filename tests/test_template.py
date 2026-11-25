@@ -141,6 +141,60 @@ class TemplateTests(unittest.TestCase):
             check=False,
         )
 
+    def test_make_init_configures_template_once(self) -> None:
+        """Exercise the README interview and its read-only second invocation."""
+        with tempfile.TemporaryDirectory(prefix="park-init-") as temp:
+            root = Path(temp) / "project"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", Path(temp).name,
+            ))
+            answers = "Example Project\nA sample for PARK.\npython,go\ncli,api\n\nmit\n"
+            result = subprocess.run(["make", "init"], cwd=root, input=answers,
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Run `make assurance` after committing", result.stdout)
+            profile = root / ".park/profile.json"
+            self.assertEqual(json.loads(profile.read_bytes()), {
+                "version": 1, "languages": ["python", "go"],
+                "contexts": ["cli", "api"], "assurance": "medium",
+            })
+            self.assertIn("Authorize each operation", (root / ".specify/memory/constitution.md").read_text())
+            self.assertTrue((root / ".specify/templates/spec-template.md").is_file())
+            self.assertTrue((root / ".squad/team.md").is_file())
+            self.assertIn("# Example Project", (root / "README.md").read_text())
+            self.assertIn("A sample for PARK.", (root / "README.md").read_text())
+            self.assertIn("MIT License", (root / "LICENSE").read_text())
+            self.assertFalse((root / ".portable-agent-template").exists())
+            profile_bytes = profile.read_bytes()
+            repeat = subprocess.run(["make", "init"], cwd=root, input="", text=True, capture_output=True)
+            self.assertEqual(repeat.returncode, 0, repeat.stderr)
+            self.assertIn("Project initialized", repeat.stdout)
+            self.assertIn("make assurance to scan the current commit", repeat.stdout)
+            self.assertEqual(profile.read_bytes(), profile_bytes)
+
+    def test_make_init_requires_complete_answers(self) -> None:
+        """Reject an interrupted interview or invalid answers without writing files."""
+        with tempfile.TemporaryDirectory(prefix="park-init-") as temp:
+            root = Path(temp) / "project"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", Path(temp).name,
+            ))
+            for answers, message in (
+                ("Example\n", "interview ended before setup was complete"),
+                ("Example\nTest project\npython\nmobile\n", "unknown context"),
+                ("Example\nTest project\n\n\n\ninvalid\n", "unknown license choice"),
+            ):
+                with self.subTest(message=message):
+                    result = subprocess.run(["make", "init"], cwd=root, input=answers,
+                                            text=True, capture_output=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(message, result.stderr)
+                    self.assertNotIn("after committing", result.stdout)
+                    self.assertTrue((root / ".portable-agent-template").is_file())
+                    self.assertFalse((root / ".park").exists())
+                    for path in ("README.md", "LICENSE"):
+                        self.assertEqual((root / path).read_bytes(), (ROOT / path).read_bytes())
+
     def test_create_project_and_validate_generated_repository(self) -> None:
         """Check generated policy, skill resources and the full consumer gate."""
         with tempfile.TemporaryDirectory(prefix="park-test-") as temp:

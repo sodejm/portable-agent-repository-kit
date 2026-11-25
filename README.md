@@ -1,21 +1,36 @@
-# PARK — Portable Agent Repository Kit
+# PARK — an AGENTS.md template for AI coding agents
 
 [![Repository contract](https://github.com/sodejm/portable-agent-repository-kit/actions/workflows/repository-contract.yml/badge.svg?branch=main)](https://github.com/sodejm/portable-agent-repository-kit/actions/workflows/repository-contract.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Use this template](https://img.shields.io/badge/use_this-template-2ea44f)](https://github.com/new?template_name=portable-agent-repository-kit&template_owner=sodejm)
 
-**Start every repository with one portable contract for AI coding agents.**
+Portable Agent Repository Kit (PARK) is a GitHub template for teams using Codex,
+Claude Code, and GitHub Copilot. Write repository instructions once in
+`AGENTS.md`, keep reusable Agent Skills in `.agents/skills/`, and use GitHub
+Actions to catch changes that leave Claude Code’s skill copies out of sync.
 
-PARK is an open, vendor-neutral GitHub repository template for agentic development.
-It gives Codex, Claude Code, GitHub Copilot, ChatGPT, Google Antigravity, and other
-AI coding assistants the same shared instructions, Agent Skills, MCP guidance,
-checks, hooks, and delivery workflows—without locking the project to one vendor.
+## Quick start
 
-The goal is not to make every agent behave identically. The goal is to give every
-agent the same trustworthy repository contract, the same reusable workflows, and
-the same evidence gates without locking a project to one vendor.
+1. [Create a repository from PARK](https://github.com/new?template_name=portable-agent-repository-kit&template_owner=sodejm).
+2. Clone **your new repository** and open its root directory before making edits.
+   You’ll need Git, Python 3.10 or later, and Make.
+3. Initialize the project and check the generated files.
 
-In a fresh project clone, run `make init` for guided setup. See [Project assurance](docs/PROJECT_ASSURANCE.md) for profiles, Spec Kit, Squad and CI.
+```bash
+make init
+make check
+```
+
+The setup interview asks for a project name, description, languages, workload
+contexts, assurance level, and license. Press Enter at the assurance prompt to
+accept the level suggested for your contexts. Review the generated project
+profile in `.park/profile.json` and constitution in `.specify/memory/constitution.md`,
+then commit the generated files when the checks pass. Run `make assurance` to scan
+that commit with the latest stable security scanners. See [Project assurance](docs/PROJECT_ASSURANCE.md)
+for scanner setup and the controls each level adds.
+
+From a local PARK checkout, use the same interview to
+[create a project in a separate directory](docs/GETTING_STARTED.md#create-into-a-local-directory).
 
 ## Supported environments
 
@@ -28,30 +43,10 @@ In a fresh project clone, run `make init` for guided setup. See [Project assuran
 | ChatGPT | linked repository context or a custom MCP/App integration | not guaranteed in ordinary chat | MCP or a ChatGPT App |
 | Other agents | `AGENTS.md` | Agent Skills-compatible clients | MCP-compatible clients |
 
-Compatibility means the checked-in contract is available to the environment. It
-does not imply identical permissions, hook semantics, context discovery, or tool
-availability. See [Compatibility](docs/COMPATIBILITY.md).
+See [how coding agents read PARK’s instructions](docs/COMPATIBILITY.md) for
+each client’s discovery paths and integration requirements.
 
-## Start a project
-
-Select **Use this template**, clone the new repository and run the setup interview in the clean clone.
-
-```bash
-make init
-make check
-```
-
-Choose a project name, description, languages, workload contexts, assurance level and license. Setup recommends a level based on the workload and writes the security constitution, Spec Kit templates and Squad configuration. Review the generated files and commit them.
-
-To create a separate project directory from a PARK Git checkout, run the same interview with the generator.
-
-```bash
-python3 scripts/create_project.py ../my-project --interactive
-```
-
-Choose a new or empty destination outside PARK. For scripted setup and hosted enforcement, see [Getting started](docs/GETTING_STARTED.md) and [Project assurance](docs/PROJECT_ASSURANCE.md).
-
-## The open spine
+## What your generated repository contains
 
 - `AGENTS.md` is the canonical agent contract.
 - `.agents/skills/*/SKILL.md` uses the open Agent Skills shape.
@@ -86,12 +81,12 @@ the distinction between automated checks and review of meaning.
 
 ## Documentation
 
-Start with [Getting Started](docs/GETTING_STARTED.md), then use the
-[Repository Layout](docs/REPOSITORY_LAYOUT.md) to understand what each directory
-owns and how generation works. The [Documentation Index](docs/INDEX.md) links the
-full guide set. Maintainers should also read
-[Portability Architecture](docs/PORTABILITY.md), [Skills](docs/SKILLS.md), and
-[Security Model](docs/SECURITY_MODEL.md). PARK maintainers must also follow the
+- [Create or configure a repository from the PARK template](docs/GETTING_STARTED.md)
+- [Find the files to customize in a generated repository](docs/REPOSITORY_LAYOUT.md)
+- [Update an Agent Skill and synchronize the Claude Code copy](docs/COMPATIBILITY.md#update-an-agent-skill-for-claude-code)
+- [Browse all PARK guides](docs/INDEX.md), including [portability architecture](docs/PORTABILITY.md), [skill authoring](docs/SKILLS.md), and the [security model](docs/SECURITY_MODEL.md).
+
+PARK maintainers must also follow the
 [owner-review policy and activation runbook](docs/OWNER_REVIEW_POLICY.md).
 
 ## Validate PARK
@@ -105,6 +100,8 @@ The implementation uses Python's standard library and Git. No package installati
 is required for the repository contract checks.
 
 ## Community
+
+If PARK helped you set up a project, consider starring the repository.
 
 Use the [issue chooser](https://github.com/sodejm/portable-agent-repository-kit/issues/new/choose)
 to report a bug or propose a change. GitHub's `blob` pages show a read-only preview

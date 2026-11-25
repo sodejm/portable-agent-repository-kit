@@ -1,4 +1,4 @@
-# Getting started
+# Create a GitHub repository from an AGENTS.md template
 
 ## Prerequisites
 
@@ -7,37 +7,66 @@
 - GNU Make or a compatible `make` implementation for convenience
 - GitHub CLI only if the project will create or inspect GitHub state
 
-Setup uses Python's standard library and Git. The portable checks run locally. Security scans require the tools listed in [Project assurance](PROJECT_ASSURANCE.md).
+Setup uses Git and Python's standard library. Security scanning also requires the
+tools listed in [Project assurance](PROJECT_ASSURANCE.md).
 
 ## Configure a GitHub template clone
 
-Select **Use this template**, clone the new repository and run the interview in the clean clone.
+[Use PARK as a GitHub template](https://github.com/new?template_name=portable-agent-repository-kit&template_owner=sodejm),
+clone the repository you created, and run these commands from its root before editing any files.
 
 ```bash
 make init
+make check
 ```
 
-Enter a name, description, languages and workload contexts. Choose the suggested assurance level or select another, then choose a license. Setup creates a project README, a security constitution, Spec Kit templates and Squad coordination files. Review the generated files, run `make check` and commit the result. Running `make init` again preserves the configuration.
+Enter the project name and description, then give the languages and workload
+contexts as comma-separated values. For example, enter `python,go` for languages
+and `cli,api` for contexts. Press Enter to accept the suggested `medium` assurance
+level for that combination. Choose `mit`, `apache-2.0`, or `none` for the license.
+
+Review `.park/profile.json` for your selections and `.specify/memory/constitution.md`
+for the controls they generated. Setup also creates Spec Kit templates and a local
+Squad coordinator. Once the checks pass, commit the generated files and run
+`make assurance` to scan the commit. Running
+`make init` again shows where to find the constitution. See the
+[project assurance guide](PROJECT_ASSURANCE.md) for context and language guidance.
+
+### Configure without prompts
+
+For scripted setup, pass the same details as command-line arguments.
+
+```bash
+python3 scripts/configure_project.py \
+  --name "Example" \
+  --description "A concise project description" \
+  --languages python \
+  --context api \
+  --assurance medium \
+  --github-owner example-owner \
+  --license apache-2.0
+```
+
+The command only runs in a directory containing `.portable-agent-template`. It
+updates repository-owned placeholders, creates the chosen license, replaces the
+template README with a project README, synchronizes adapters, and removes the
+marker and generator-only assets. Use `--github-owner` to set the GitHub owner. You can
+override the inferred slug with `--slug` and the default branch (`main`) with
+`--default-branch`. Run `make check`, review the diff, and commit the generated
+files.
 
 ## Create into a local directory
 
-From a PARK Git checkout, choose a new or empty destination outside the checkout.
+From a PARK Git checkout, choose a new or empty directory outside the checkout.
 
 ```bash
-python3 scripts/create_project.py ../example --interactive
+python3 scripts/create_project.py ../example --interactive --init-git
+cd ../example
+make check
 ```
 
-The generator copies tracked files and stages setup before publishing the directory. Supply explicit options for unattended setup. This example creates a Python API at medium assurance and initializes a local Git repository.
-
-```bash
-python3 scripts/create_project.py ../example \
-  --name "Example" \
-  --description "A small internal API" \
-  --languages python --context api --assurance medium \
-  --license mit --init-git
-```
-
-Run `make check` in the generated directory. License choices are `mit`, `apache-2.0` and `none`.
+The local generator uses the same interview and accepts the same flags for
+scripted setup. The `--init-git` flag initializes Git in the new directory.
 
 ## First project decisions
 
