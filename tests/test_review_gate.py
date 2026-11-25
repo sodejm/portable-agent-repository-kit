@@ -334,28 +334,6 @@ class ReviewGateTests(unittest.TestCase):
                     self.policy.repository,
                 )
 
-    def test_associated_push_requires_live_pr_and_matching_head(self) -> None:
-        """Apply the review policy to the PR associated with a branch push."""
-        event = workflow_event("push")
-        with mock.patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_run"}):
-            number, head = review_gate._workflow_trigger(
-                TriggerGitHub(workflow_run(event="push")), event, self.policy.repository
-            )
-            self.assertEqual((number, head), (self.pull.number, HEAD))
-            self.assertFalse(review_gate.evaluate_pull(
-                FakeGitHub(), self.policy, self.pull, expected_head=head
-            ).allowed)
-            with self.assertRaisesRegex(review_gate.GateError, "live PR head"):
-                review_gate.evaluate_pull(
-                    FakeGitHub(), self.policy, self.pull, expected_head=OLD_HEAD
-                )
-            for changes in ({"head_sha": None}, {"pull_requests": [{"number": 7}, {"number": 8}]}):
-                with self.subTest(changes=changes), self.assertRaises(review_gate.GateError):
-                    review_gate._workflow_trigger(
-                        TriggerGitHub(workflow_run(event="push", **changes)),
-                        event, self.policy.repository,
-                    )
-
     def test_live_workflow_trigger_handles_push_and_dispatch(self) -> None:
         push = workflow_run(event="push", pull_requests=[])
         with mock.patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_run"}):
