@@ -1,4 +1,4 @@
-# Getting started
+# Create a GitHub repository from an AGENTS.md template
 
 ## Prerequisites
 
@@ -8,6 +8,40 @@
 - GitHub CLI only if the project will create or inspect GitHub state
 
 PARK's setup and contract checks use only Python's standard library.
+
+## Configure a GitHub template clone
+
+[Use PARK as a GitHub template](https://github.com/new?template_name=portable-agent-repository-kit&template_owner=sodejm),
+clone the repository you created, and run these commands from its root.
+
+```bash
+make init
+make check
+```
+
+Enter a display name and description. Enter your GitHub owner and repository slug
+to set the project’s identity, or accept the slug derived from the display name.
+The default branch is `main`. Choose `mit`, `apache-2.0`, or `none` for the
+project license.
+
+### Configure without prompts
+
+For scripted setup, pass the same details as command-line arguments.
+
+```bash
+python3 scripts/configure_project.py \
+  --name "Example" \
+  --description "A concise project description" \
+  --github-owner example-owner \
+  --license apache-2.0
+```
+
+The command only runs in a directory containing `.portable-agent-template`. It
+updates repository-owned placeholders, creates the chosen license, replaces the
+template README with a project README, synchronizes adapters, and removes the
+marker and generator-only assets. The setup script accepts `--slug` and
+`--default-branch` when the inferred slug or default branch differs from your
+repository. Run `make check`, review the diff, and commit the generated files.
 
 ## Create into a local directory
 
@@ -29,24 +63,6 @@ skill adapters, optionally initializes Git, and runs the repository contract che
 
 Use `--license apache-2.0` or `--license none` when appropriate. License selection
 is a product and governance decision; PARK does not choose silently.
-
-## Configure a GitHub template clone
-
-After creating a repository with GitHub's **Use this template** button:
-
-```bash
-python3 scripts/configure_project.py \
-  --name "Example" \
-  --description "A concise project description" \
-  --github-owner example-owner \
-  --license apache-2.0
-```
-
-The command only runs in a directory containing `.portable-agent-template`. It
-updates repository-owned placeholders, creates the chosen license, replaces the
-template README with a project README, synchronizes adapters, and removes the
-marker and generator-only assets. The portable contract and its checks remain. Run
-it once, review the diff, then commit.
 
 ## First project decisions
 

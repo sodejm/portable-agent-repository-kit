@@ -88,6 +88,50 @@ class TemplateTests(unittest.TestCase):
             check=False,
         )
 
+    def test_make_init_configures_template_once(self) -> None:
+        """Run the README entry point and verify it cannot reconfigure the project."""
+        with tempfile.TemporaryDirectory(prefix="park-init-") as temp:
+            root = Path(temp) / "project"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", Path(temp).name,
+            ))
+            answers = "Example Project\nA sample for PARK.\nexample-owner\nexample-repo\ntrunk\nmit\n"
+            result = subprocess.run(["make", "init"], cwd=root, input=answers,
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            readme = (root / "README.md").read_text()
+            self.assertIn("Example Project", readme)
+            self.assertIn("A sample for PARK.", readme)
+            policy = json.loads((root / ".github/review-policy.json").read_text())
+            self.assertEqual(policy["repository"], "example-owner/example-repo")
+            self.assertIn("MIT License", (root / "LICENSE").read_text())
+            self.assertFalse((root / ".portable-agent-template").exists())
+            repeat = subprocess.run(["make", "init"], cwd=root, input="",
+                                    text=True, capture_output=True)
+            self.assertNotEqual(repeat.returncode, 0)
+            self.assertIn("unconfigured PARK template", repeat.stderr)
+            self.assertEqual((root / "README.md").read_text(), readme)
+
+    def test_make_init_requires_complete_answers(self) -> None:
+        """Reject interrupted input and invalid licenses before changing the template."""
+        with tempfile.TemporaryDirectory(prefix="park-init-") as temp:
+            root = Path(temp) / "project"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", Path(temp).name,
+            ))
+            for answers, message in (
+                ("Example\n", "Setup cancelled"),
+                ("Example\nTest project\n\n\n\ninvalid\n", "unsupported license"),
+            ):
+                with self.subTest(answers=answers):
+                    result = subprocess.run(["make", "init"], cwd=root, input=answers,
+                                            text=True, capture_output=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(message, result.stderr)
+                    self.assertTrue((root / ".portable-agent-template").is_file())
+                    for path in ("README.md", "LICENSE"):
+                        self.assertEqual((root / path).read_bytes(), (ROOT / path).read_bytes())
+
     def test_create_project_and_validate_generated_repository(self) -> None:
         """Check generated policy, skill resources and the full consumer gate."""
         with tempfile.TemporaryDirectory(prefix="park-test-") as temp:

@@ -50,7 +50,7 @@ PARK uses a one-way ownership model to prevent instructions from drifting:
 
 The files under `.claude/skills/` are generated from `.agents/skills/` because
 Claude Code uses a different discovery location. Do not edit those copies directly.
-Run `make sync-adapters` after changing a canonical skill. `make check` fails if the
+Run `make sync-agent-adapters` after changing a canonical skill. `make check` fails if the
 copies drift.
 
 ## How project creation works
@@ -59,7 +59,7 @@ There are two supported entry paths:
 
 ```text
 PARK checkout -- create_project.py --> new local directory
-GitHub template clone -- configure_project.py --> configured current directory
+GitHub template clone -- make init --> configured current directory
 ```
 
 Both paths use the same rendering and validation logic:
@@ -71,7 +71,9 @@ Both paths use the same rendering and validation logic:
 5. Reset the review policy to an unconfigured, fail-closed project copy.
 6. Synchronize environment adapters from canonical skills.
 7. Remove `.portable-agent-template` and generator-only assets.
-8. Run the repository contract validation.
+
+The local generator runs the contract check before it returns. After `make init`
+in a GitHub template clone, run `make check` to validate the generated repository.
 
 The resulting repository keeps the portable agent contract, skills, adapters,
 documentation, CI, and checks. It does not keep PARK's project generator, generator
