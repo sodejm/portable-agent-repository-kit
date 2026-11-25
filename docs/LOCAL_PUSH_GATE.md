@@ -19,9 +19,9 @@ Policy is pinned to committed Git blob IDs. Any change under `tools/push_gate/` 
 
 ## Prerequisites and checks
 
-Install native Semgrep **1.186.0** as described below and Trivy **0.76.2** from its official distribution; the gate rejects other versions. Also install Git, Python >=3.11 and uv. `tools/push_gate/requirements.txt` pins direct Python validation dependencies; project dependency locks and canonical manifests govern project installs. Transitive validation dependencies are resolved by uv and are not a fully frozen toolchain. Network/package/provider access and sufficient temporary disk space are required for full gate validation. When relevant files exist, install actionlint, ShellCheck, bash and hadolint: all workflows, tracked shell scripts and Dockerfiles are checked. Missing tools fail closed. Scanner overrides inherited from the caller are removed.
+Install native Semgrep **1.187.0** as described below and Trivy **0.76.2** from its official distribution; the gate rejects other versions. Also install Git, Python >=3.11 and uv. `tools/push_gate/requirements.txt` pins direct Python validation dependencies; project dependency locks and canonical manifests govern project installs. Transitive validation dependencies are resolved by uv and are not a fully frozen toolchain. Network/package/provider access and sufficient temporary disk space are required for full gate validation. When relevant files exist, install actionlint, ShellCheck, bash and hadolint: all workflows, tracked shell scripts and Dockerfiles are checked. Missing tools fail closed. Scanner overrides inherited from the caller are removed.
 
-Scanner pins refreshed on 2026-11-20 against the latest stable official [Semgrep release](https://github.com/semgrep/semgrep/releases/tag/v1.186.0) and [Trivy release](https://github.com/aquasecurity/trivy/releases/tag/v0.76.2). Python validation dependencies were checked against PyPI on 2026-11-23: Ruff 0.17.6, Coverage 7.17.5, Build 1.6.1, and pip-audit 2.10.1. Coverage 7.17 requires Python 3.11 or newer, raising the optional gate's prerequisite without changing the portable standard-library checks. Refreshing pins requires rerunning validation and reinstalling the committed policy; it does not change scanner rules or severity thresholds. Scanner doubles in the gate regression suite use synthetic version fixtures; `tests/test_scanner_pins.py` checks the real reviewed pins and this guide.
+Scanner pins refreshed on 2026-11-24 against the latest stable official [Semgrep release](https://github.com/semgrep/semgrep/releases/tag/v1.187.0) and [Trivy release](https://github.com/aquasecurity/trivy/releases/tag/v0.76.2). Python validation dependencies were checked against PyPI on 2026-11-23: Ruff 0.17.6, Coverage 7.17.5, Build 1.6.1, and pip-audit 2.10.1. Coverage 7.17 requires Python 3.11 or newer, raising the optional gate's prerequisite without changing the portable standard-library checks. Refreshing pins requires rerunning validation and reinstalling the committed policy; it does not change scanner rules or severity thresholds. Scanner doubles in the gate regression suite use synthetic version fixtures; `tests/test_scanner_pins.py` checks the real reviewed pins and this guide.
 
 The gate runs `make check` (contracts, adapters, template/workboard and skill
 tests), unittest branch coverage and pip-audit. Existing portable checks remain
@@ -31,15 +31,15 @@ Every profile also validates the gate with Ruff lint/format and its disposable G
 
 ### Native Semgrep installation
 
-Obtain the official 1.186.0 wheel separately, without installing it or resolving
+Obtain the official 1.187.0 wheel separately, without installing it or resolving
 Python dependencies. The offline, standard-library installer accepts only these
 SHA256 identities, supplied for the reviewed release:
 
 | Host / supplied wheel platform | SHA256 |
 | --- | --- |
-| Native macOS ARM64 | `94b473227b1abe89d104bf87a50e257b3c47f0e09483e4290babc99c01e3aea8` |
-| Linux ARM64 / `manylinux_2_34_aarch64` | `bde206edcfa9ac2f5ed5e3fc58d1c675b4e9979a716ecb46b4e60e6bb6a035a4` |
-| Linux x86_64 / `manylinux_2_34_x86_64` | `54ebaf79adf4e5855c54d5e4457d8d03f27cc6bf73d79642281790b833d92e4f` |
+| Native macOS ARM64 | `a44a8f486719e69fe38c451c70b4808bed5532bbcb4c25a8dd04a74617dfcca0` |
+| Linux ARM64 / `manylinux_2_34_aarch64` | `79f0a3dc63607fada4ae2225599ab5eef8005124a8484814184df72805afcfc0` |
+| Linux x86_64 / `manylinux_2_34_x86_64` | `ad160ed527bd153b96616814366a6d17f451d37babf75df6705327aede0cc8bd` |
 
 Linux requires glibc >=2.34. Intel macOS, Rosetta/x86_64 macOS processes,
 Windows, musl Linux and other architectures are unsupported by this installer.
@@ -49,8 +49,8 @@ an older scanner pin or a Python fallback to work around this boundary.
 Choose a **new directory** in a trusted, existing parent. For example:
 
 ```sh
-python3 -I -S tools/push_gate/install_native_semgrep.py /path/to/official-semgrep.whl "$HOME/.local/park-semgrep-native-1.186.0"
-export PATH="$HOME/.local/park-semgrep-native-1.186.0/semgrep/bin:$PATH"
+python3 -I -S tools/push_gate/install_native_semgrep.py /path/to/official-semgrep.whl "$HOME/.local/park-semgrep-native-1.187.0"
+export PATH="$HOME/.local/park-semgrep-native-1.187.0/semgrep/bin:$PATH"
 semgrep-core -version
 PARK_NATIVE_SEMGREP=1 python3 tests/test_scanner_reachability.py -v
 ```
@@ -75,7 +75,7 @@ requires both names to resolve to the same file and checks the raw exact version
 It calls `osemgrep scan --experimental`, takes JSON from stdout, and never invokes
 `semgrep`, `pysemgrep` or the Python console-script launcher.
 
-The pinned wheels supplied the native engine and its bundled library dependencies on macOS ARM64, Linux x86_64 and Linux ARM64. The engine executed a local scan on macOS ARM64 and emulated Linux x86_64. Linux ARM64 has extraction coverage only. The opt-in macOS run detected matches in all eleven target extensions.
+On macOS ARM64 the 1.187.0 engine detected the expected findings in all eleven test files with Python fallback traps active. For release 1.186.0, the wheels supplied the native engine and its bundled library dependencies on macOS ARM64, Linux x86_64 and Linux ARM64. The engine executed a local scan on macOS ARM64 and emulated Linux x86_64. Linux ARM64 has extraction coverage only. The opt-in macOS run detected matches in all eleven target extensions.
 On macOS, verify that mixed-case aliases of `.park-semgrep-ignore` at the root,
 as nested files and as directory components block pushes before scanning.
 The opt-in test above exercises matching in each declared target extension,

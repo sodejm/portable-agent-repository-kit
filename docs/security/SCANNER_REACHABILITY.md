@@ -1,8 +1,8 @@
 # Native scanner remediation and historical assessment
 
-## Current installation boundary (2026-11-20)
+## Current installation boundary (2026-11-24)
 
-The supported scanner setup now extracts the pinned official Semgrep 1.186.0
+The supported scanner setup now extracts the pinned official Semgrep 1.187.0
 native engine and its linked bundled libraries without installing wheel Python
 code or resolving Python dependency packages. The offline installer verifies the
 complete wheel SHA256 before parsing and fails closed on unsafe entries, unknown
@@ -47,7 +47,7 @@ checks an installed native engine against synthetic matching controls for all
 declared target extensions, inline suppression and nested ignores, with Python
 launchers trapped. It is opt-in and does not validate a real push or Trivy feed.
 
-The pinned wheels supplied the native engine and its bundled library dependencies on macOS ARM64, Linux x86_64 and Linux ARM64. The engine executed a local scan on macOS ARM64 and emulated Linux x86_64. Linux ARM64 has extraction coverage only. The macOS test detected matches across the declared extensions with Python launchers replaced by traps. [Issue #16](https://github.com/sodejm/portable-agent-repository-kit/issues/16) tracks remediation and gate validation.
+On macOS ARM64 the 1.187.0 engine detected the expected findings in all eleven test files with Python fallback traps active. For release 1.186.0, the wheels supplied the native engine and its bundled library dependencies on macOS ARM64, Linux x86_64 and Linux ARM64. The engine executed a local scan on macOS ARM64 and emulated Linux x86_64. Linux ARM64 has extraction coverage only. The macOS test detected matches across the declared extensions with Python launchers replaced by traps. [Issue #16](https://github.com/sodejm/portable-agent-repository-kit/issues/16) tracks remediation and gate validation.
 
 ## Historical Python-environment assessment (superseded)
 

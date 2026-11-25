@@ -155,7 +155,7 @@ validation before the affected release/capability expansion and schedule P2 with
 - Existing evidence / limitation: Local contract and adapter checks exist; they are not a provenance proof.
 - Scanner maintenance: the pre-push policy requires upstream stable-release
   verification before pushing, reviewed pin/test/doc updates and trusted-gate
-  refresh. The optional gate pins Semgrep 1.186.0 and Trivy 0.76.2; no rule,
+  refresh. The optional gate pins Semgrep 1.187.0 and Trivy 0.76.2; no rule,
   severity threshold, bypass or token permission changes accompany this refresh.
   Release recency is not evidence that a tool or transitive dependency is secure.
 - Dependency refresh (2026-11-23): optional validation uses Ruff 0.17.6 and

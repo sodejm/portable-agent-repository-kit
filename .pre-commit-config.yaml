@@ -1,8 +1,16 @@
 repos:
   - repo: local
     hooks:
+      - id: session-handoff
+        name: Validate staged session handoff
+        entry: python3 tools/push_gate/session_delivery.py quick
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
       - id: park-repository-contract
         name: PARK repository contract
+        stages: [pre-push]
         entry: python3 scripts/agent/check.py
         language: system
         pass_filenames: false

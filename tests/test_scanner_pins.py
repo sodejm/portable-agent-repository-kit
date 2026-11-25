@@ -14,7 +14,7 @@ class ScannerPinTests(unittest.TestCase):
     def test_reviewed_scanner_releases_match_installation_guide(self) -> None:
         """Require both approved versions and their upstream release references."""
         policy = json.loads((ROOT / "tools/push_gate/policy.json").read_text(encoding="utf-8"))
-        self.assertEqual(policy["tools"], {"semgrep": "1.186.0", "trivy": "0.76.2"})
+        self.assertEqual(policy["tools"], {"semgrep": "1.187.0", "trivy": "0.76.2"})
         guide = (ROOT / "docs/LOCAL_PUSH_GATE.md").read_text(encoding="utf-8")
         for name, version in policy["tools"].items():
             with self.subTest(scanner=name):

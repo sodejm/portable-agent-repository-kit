@@ -44,7 +44,7 @@ class ScannerReachabilityTests(unittest.TestCase):
             """Capture version probes so added invocations cannot hide there."""
             commands.append(argv)
             if argv[0] == "semgrep-core":
-                return f"semgrep-core version: {policy['tools']['semgrep']} (e7f7148977)".encode()
+                return f"semgrep-core version: {policy['tools']['semgrep']} (a5341ae595)".encode()
             return policy["tools"]["trivy"].encode()
 
         (directory / "sample.py").write_text(
@@ -195,7 +195,7 @@ class ScannerReachabilityTests(unittest.TestCase):
         )
         self.assertEqual(
             (version.returncode, version.stdout.strip()),
-            (0, b"semgrep-core version: 1.186.0 (e7f7148977)"),
+            (0, b"semgrep-core version: 1.187.0 (a5341ae595)"),
         )
         with tempfile.TemporaryDirectory(prefix="park-native-scan-") as temporary:
             directory = Path(temporary)
