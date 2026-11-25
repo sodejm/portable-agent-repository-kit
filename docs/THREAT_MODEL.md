@@ -342,3 +342,9 @@ residual risk acceptance and exact-revision human review remain pending.
 ### Project bootstrap
 
 Setup consumes local project metadata and pinned integration assets. Local creation stages output before publication. In-place initialization requires a fresh checkout and rejects symlinks or existing integration state. The initial coordinator has no network or release authority. Profile edits affect generated project obligations and require policy review.
+
+### Project assurance and release provenance
+
+Project authors control pull request contents, including their proposed policies and tests. PR scanners use read-only repository access on hosted runners. Trusted branch protection and qualified review of workflow and policy changes are deployment prerequisites. Exact-commit tests can still have weak assertions. Review the requested outcome and exercise the real entry point. Scan findings and SBOMs can contain sensitive metadata, so restrict evidence access.
+
+The release workflow signs the source archive on a manual default-branch run. Only the attestation job receives OIDC and attestation write permissions. Critical releases check environment protection and require reviewed recovery evidence. Repository administrators own branch rules, designated reviewer configuration, environment protection and mapping product build outputs to signed subjects. Live enforcement and independent human review require evidence from the deployed repository.

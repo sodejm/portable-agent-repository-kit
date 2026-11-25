@@ -5,6 +5,12 @@ the project publishes versioned releases.
 
 ## Unreleased
 
+- Interview project owners on first setup and generate a scoped Spec Kit constitution,
+  local Squad coordinator and cumulative assurance controls.
+- Check acceptance cases and secrets in CI, retain dependency inventories at medium
+  and above, and verify signed source provenance for high and critical releases.
+- Restrict Git template distribution to tracked regular files.
+
 - Refresh optional validation pins for Ruff 0.17.6 and Coverage 7.17.5; retain
   the verified Build, pip-audit, Semgrep, Trivy, and immutable CI action pins.
 - Clarify the distinct `AGENTS.md`, Agent Skills, and MCP formats listed in the

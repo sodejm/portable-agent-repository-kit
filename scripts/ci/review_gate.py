@@ -29,25 +29,30 @@ class GateError(RuntimeError):
 
 @dataclasses.dataclass(frozen=True)
 class Identity:
+    """GitHub account expected to satisfy an identity check."""
     login: str
     account_type: str
 
 
 @dataclasses.dataclass(frozen=True)
 class Reviewer(Identity):
+    """Designated reviewer and required repository permission."""
     minimum_permission: str
     security_qualified: bool
 
 
 @dataclasses.dataclass(frozen=True)
 class Policy:
+    """Trusted repository identities and approval requirements."""
     repository: str
     owner_review: Identity | None
     required_reviewer: Reviewer | None
+    independent: bool = False
 
 
 @dataclasses.dataclass(frozen=True)
 class Pull:
+    """Live pull request identity, author, state and head commit."""
     number: int
     head_sha: str
     author: str
@@ -56,12 +61,14 @@ class Pull:
 
 @dataclasses.dataclass(frozen=True)
 class Target:
+    """Pull request and optional event-bound head commit."""
     number: int
     head_sha: str | None
 
 
 @dataclasses.dataclass(frozen=True)
 class Decision:
+    """Review gate result for the current head."""
     allowed: bool
     title: str
     summary: str
@@ -101,6 +108,7 @@ def _identity(value: Any, label: str) -> Identity | None:
 
 
 def load_policy(path: Path) -> Policy:
+    """Validate the trusted policy schema and resolve configured accounts."""
     try:
         raw = json.loads(
             path.read_text(encoding="utf-8"),
@@ -108,11 +116,13 @@ def load_policy(path: Path) -> Policy:
         )
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise GateError(f"cannot read strict review policy: {error}") from error
-    data = _object(
-        raw,
-        "policy",
-        {"version", "repository", "owner_review", "required_reviewer"},
-    )
+    keys = {"version", "repository", "owner_review", "required_reviewer"}
+    if isinstance(raw, dict) and "require_independent_review" in raw:
+        keys.add("require_independent_review")
+    data = _object(raw, "policy", keys)
+    independent = data.get("require_independent_review", False)
+    if type(independent) is not bool:
+        raise GateError("require_independent_review must be a boolean")
     if type(data["version"]) is not int or data["version"] != 1:
         raise GateError("policy.version must be integer 1")
     repository = data["repository"]
@@ -147,13 +157,14 @@ def load_policy(path: Path) -> Policy:
             permission,
             item["security_qualified"],
         )
-    return Policy(repository, owner, reviewer)
+    return Policy(repository, owner, reviewer, independent)
 
 
 class GitHub:
     """Small fail-closed GitHub REST client with bounded pagination."""
 
     def __init__(self, token: str, api_url: str = "https://api.github.com") -> None:
+        """Bind the token to the configured GitHub API origin."""
         if not token:
             raise GateError("REVIEW_GATE_TOKEN is required")
         parsed = urllib.parse.urlsplit(api_url)
@@ -164,6 +175,7 @@ class GitHub:
         self.base = api_url.rstrip("/")
 
     def request(self, path: str, *, method: str = "GET", body: Any = None) -> tuple[Any, dict[str, str]]:
+        """Perform one authenticated API request and return its body and headers."""
         url = path if path.startswith("https://") else self.base + path
         parsed = urllib.parse.urlsplit(url)
         if f"{parsed.scheme}://{parsed.netloc}" != self.origin:
@@ -188,9 +200,11 @@ class GitHub:
             raise GateError(f"GitHub API request failed for {parsed.path}: {error}") from error
 
     def get(self, path: str) -> Any:
+        """Read a single API resource."""
         return self.request(path)[0]
 
     def pages(self, path: str) -> list[Any]:
+        """Read a paginated collection from the trusted API origin."""
         results: list[Any] = []
         next_url: str | None = path
         seen: set[str] = set()
@@ -208,9 +222,11 @@ class GitHub:
         raise GateError("GitHub pagination exceeded 100 pages")
 
     def post(self, path: str, body: Any) -> Any:
+        """Create a resource through the GitHub API."""
         return self.request(path, method="POST", body=body)[0]
 
     def patch(self, path: str, body: Any) -> Any:
+        """Update an existing resource through the GitHub API."""
         return self.request(path, method="PATCH", body=body)[0]
 
 
@@ -275,6 +291,7 @@ def _event_target(event: dict[str, Any]) -> Target | None:
 
 
 def fetch_pull(client: Any, repository: str, number: int) -> Pull:
+    """Read and validate the current pull request identity and head."""
     data = _dict(client.get(f"/repos/{repository}/pulls/{number}"), "pull request")
     try:
         actual_number = data["number"]
@@ -334,13 +351,14 @@ def evaluate_pull(
     *,
     expected_head: str | None = None,
 ) -> Decision:
+    """Evaluate the trusted policy against live identity, approval and head data."""
     owner, reviewer = policy.owner_review, policy.required_reviewer
-    if owner is None or reviewer is None:
+    if (owner is None and not policy.independent) or reviewer is None:
         raise GateError("review policy is unconfigured; set owner and reviewer explicitly")
     if expected_head is not None and expected_head != pull.head_sha:
         raise GateError("triggering Repository contract run is not for the live PR head")
 
-    owner_authored = pull.author.casefold() == owner.login.casefold()
+    owner_authored = not policy.independent and owner is not None and pull.author.casefold() == owner.login.casefold()
     if owner_authored:
         author_type = _account_type(client, pull.author)
         if author_type != owner.account_type:
@@ -434,6 +452,7 @@ def evaluate_pull(
 
 
 def _workflow_trigger(client: GitHub, event: dict[str, Any], repository: str) -> tuple[int | None, str | None]:
+    """Resolve the pull request and commit associated with a contract workflow run."""
     name = os.environ.get("GITHUB_EVENT_NAME")
     if name == "workflow_dispatch":
         return _dispatch_number(event), None
@@ -512,6 +531,7 @@ def _finish(client: GitHub, repository: str, check_id: int, conclusion: str, dec
 
 
 def main() -> int:
+    """Publish the exact-head review decision for the triggering GitHub event."""
     checks: dict[str, int] = {}
     client: GitHub | None = None
     repository = ""

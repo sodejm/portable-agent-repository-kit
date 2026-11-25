@@ -1,0 +1,80 @@
+{
+  "stage": "implementation",
+  "request": "Enforce cumulative project assurance in CI and protect release provenance.",
+  "scope": "Security scans, release evidence and independent approval.",
+  "setup": "Run from the PARK checkout using Python and Git.",
+  "constraints": "Keep scanning read-only and scope signed release evidence to the default branch.",
+  "steps": [
+    {
+      "action": "Run tier-dependent checks and verify release prerequisites.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        ".github/workflows/repository-contract.yml",
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/ci/assurance.py",
+        "scripts/ci/install_assurance_tools.sh",
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_assurance_gate.py",
+        "expected": "All assurance cases pass."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "Run tier-dependent checks and verify release prerequisites.",
+      "given": "The profile enables additional controls.",
+      "when": "Run its assurance checks with synthetic scanner commands.",
+      "then": "Each required check runs for the selected tier.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        ".github/workflows/repository-contract.yml",
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/ci/assurance.py",
+        "scripts/ci/install_assurance_tools.sh",
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_cumulative_checks"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Run tier-dependent checks and verify release prerequisites.",
+      "given": "A required scanner fails or recovery evidence is stale.",
+      "when": "Run assurance and release validation.",
+      "then": "The affected operation fails closed.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        ".github/workflows/repository-contract.yml",
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/ci/assurance.py",
+        "scripts/ci/install_assurance_tools.sh",
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_failed_evidence"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Run tier-dependent checks and verify release prerequisites.",
+      "given": "A critical project owner authors a pull request.",
+      "when": "Evaluate the trusted review policy.",
+      "then": "Approval from a distinct configured reviewer is required.",
+      "paths": [
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_critical_owner_needs_separate_reviewer"
+    }
+  ],
+  "pending": []
+}

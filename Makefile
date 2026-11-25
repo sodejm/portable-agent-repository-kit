@@ -25,3 +25,7 @@ init:
 export NAME
 feature:
 	python3 scripts/agent/feature.py
+
+.PHONY: assurance
+assurance:
+	python3 scripts/ci/assurance.py scan

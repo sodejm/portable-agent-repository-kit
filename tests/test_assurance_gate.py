@@ -1,0 +1,106 @@
+"""Exercise assurance orchestration on real commits with controlled scanner outcomes."""
+
+import datetime as dt
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts/ci"))
+import assurance
+
+
+class AssuranceGateTests(unittest.TestCase):
+    """Check tier selection, evidence publication and release prerequisites."""
+    def setUp(self):
+        """Create a temporary repository with a critical-capable review policy."""
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "repo"
+        self.root.mkdir()
+        self.git("init", "-q")
+        for directory in (".park", ".github", "tools/push_gate"):
+            (self.root / directory).mkdir(parents=True)
+        (self.root / "tools/push_gate/policy.json").write_text("{}")
+        (self.root / ".github/review-policy.json").write_text('{"require_independent_review": true}')
+        self.output = Path(self.temp.name) / "output"
+
+    def git(self, *args):
+        """Run Git against the isolated fixture with a disposable identity."""
+        subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
+                        "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", *args],
+                       cwd=self.root, check=True, capture_output=True)
+
+    def commit_level(self, level):
+        """Commit the requested assurance profile."""
+        (self.root / ".park/profile.json").write_text(json.dumps({"version": 1, "assurance": level}))
+        self.git("add", ".")
+        self.git("commit", "-qm", level)
+
+    def test_cumulative_checks(self):
+        """Exercise each tier against the same baseline and check inventory output."""
+        original = assurance.gate.run
+        commands = []
+
+        def scanner(argv, cwd, **kwargs):
+            if argv[0] == "git":
+                return original(argv, cwd, **kwargs)
+            commands.append(argv[:2])
+            if argv[0] == "trivy":
+                Path(argv[argv.index("--output") + 1]).write_text('{"bomFormat": "CycloneDX"}')
+            return b""
+
+        with mock.patch.object(assurance.gate, "run", side_effect=scanner), mock.patch.object(assurance.gate, "scanners") as baseline:
+            for index, level in enumerate(assurance.LEVELS):
+                with self.subTest(level=level):
+                    commands.clear()
+                    self.commit_level(level)
+                    assurance.scan(self.root, self.output)
+                    self.assertEqual(commands[:2], [["gitleaks", "git"], ["gitleaks", "dir"]])
+                    self.assertEqual(baseline.call_count, index + 1)
+                    self.assertEqual(["trivy", "fs"] in commands, level != "low")
+                    self.assertEqual((self.output / "sbom.cdx.json").exists(), level != "low")
+
+    def test_failed_evidence(self):
+        """Reject failed scans, dated recovery records and weakened review policy."""
+        self.commit_level("critical")
+        original = assurance.gate.run
+
+        def fail_secret_scan(argv, cwd, **kwargs):
+            if argv[0] == "gitleaks":
+                raise assurance.gate.GateError("synthetic secret finding")
+            return original(argv, cwd, **kwargs)
+
+        with mock.patch.object(assurance.gate, "run", side_effect=fail_secret_scan):
+            with self.assertRaises(assurance.gate.GateError):
+                assurance.scan(self.root, self.output)
+        self.assertFalse(self.output.exists())
+        today = dt.date(2026, 1, 1)
+        record = dict(date=today.isoformat(), environment="test", procedure="restore", evidence="run-17", reviewer="reviewer", result="passed")
+        path = self.root / ".park/recovery.json"
+        path.write_text(json.dumps(record))
+        assurance.check_recovery(self.root, today)
+        for age in (-1, 91):
+            with self.assertRaises(ValueError):
+                assurance.check_recovery(self.root, today + dt.timedelta(days=age))
+        (self.root / ".github/review-policy.json").write_text("{}")
+        with self.assertRaises(ValueError):
+            assurance.tier(self.root)
+
+    def test_critical_owner_needs_separate_reviewer(self):
+        """Apply exact-head approval rules to the owner as well as contributors."""
+        import test_review_gate as fixture
+        gate = fixture.review_gate
+        policy = gate.Policy("sodejm/portable-agent-repository-kit", gate.Identity("sodejm", "User"),
+                             gate.Reviewer("sodejm", "User", "write", True), independent=True)
+        owner = gate.Pull(7, fixture.HEAD, "sodejm", "open")
+        with self.assertRaisesRegex(gate.GateError, "same account"):
+            gate.evaluate_pull(fixture.FakeGitHub(author="sodejm"), policy, owner)
+        pull = gate.Pull(7, fixture.HEAD, "contributor", "open")
+        self.assertFalse(gate.evaluate_pull(fixture.FakeGitHub(), policy, pull).allowed)
+        approved = fixture.FakeGitHub(reviews=[fixture.review(1, "APPROVED")])
+        self.assertTrue(gate.evaluate_pull(approved, policy, pull).allowed)
