@@ -6,8 +6,10 @@ import datetime as dt
 import json
 import os
 import re
+import runpy
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -161,6 +163,32 @@ def synchronize_claude_skills(root: Path) -> None:
             )
 
 
+def write_initialization_handoff(root: Path, plan: dict) -> None:
+    """Cover the initial Git change and use the generated project's own acceptance cases."""
+    options = ["git"]
+    with tempfile.TemporaryDirectory() as temporary:
+        if (root / ".git").exists():
+            tracked = subprocess.check_output(options + [
+                "diff", "--no-renames", "--name-only", "-z", "HEAD", "--"
+            ], cwd=root)
+        else:
+            # A destination can live inside another checkout. Isolate its file inventory.
+            subprocess.run(["git", "init", "--quiet", "--bare", temporary], check=True)
+            options += [f"--git-dir={temporary}", f"--work-tree={root}"]
+            tracked = b""
+        untracked = subprocess.check_output(options + [
+            "ls-files", "--others", "--exclude-standard", "-z"
+        ], cwd=root)
+    behavior = runpy.run_path(str(root / "tools/push_gate/session_delivery.py"))["behavior"]
+    paths = [os.fsdecode(item) for item in (tracked + untracked).split(b"\0") if item]
+    plan["acceptance"][0]["paths"] = sorted(path for path in set(paths) if behavior(path))
+    directory = root / "docs/session-plans"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "project-initialization.json").write_text(
+        json.dumps(plan, indent=2) + "\n", encoding="utf-8"
+    )
+
+
 def configure_project(
     root: Path,
     *,
@@ -267,11 +295,17 @@ def configure_project(
     # Keep _template_common.py because generated adapter synchronization imports it.
     for generator_file in ("create_project.py", "configure_project.py", "project_profile.py"):
         (root / "scripts" / generator_file).unlink(missing_ok=True)
-    for generator_directory in ("templates", "tests", "docs/superpowers"):
+    assets = root / "templates/project"
+    acceptance = (assets / "test_initialized_project.py.in").read_bytes()
+    handoff = json.loads((assets / "initialization.json.in").read_bytes())
+    for generator_directory in ("templates", "tests", "docs/superpowers", "docs/session-plans"):
         path = root / generator_directory
         if path.exists():
             shutil.rmtree(path)
     marker.unlink()
+    (root / "tests").mkdir()
+    (root / "tests/test_initialized_project.py").write_bytes(acceptance)
+    write_initialization_handoff(root, handoff)
 
 
 def initialize_git(root: Path, default_branch: str) -> None:

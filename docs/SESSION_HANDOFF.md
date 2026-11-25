@@ -1,6 +1,6 @@
 # Handing a session to an implementer
 
-Save one JSON file per request under `docs/session-plans/`. Use a stable descriptive name and update the same file when implementation starts. The [handoff for these hooks](session-plans/behavior-handoff-gates.json) is a populated example.
+Save one JSON file per request under `docs/session-plans/`. Use a stable descriptive name and update the same file when implementation starts. See the [recorded handoffs](session-plans/) for examples.
 
 ## Before handing off a plan
 
@@ -10,7 +10,7 @@ Save one JSON file per request under `docs/session-plans/`. Use a stable descrip
 4. List unresolved decisions, unavailable equipment and outstanding manual acceptance in `pending`. Use an empty array when all are resolved. Run the check below even for a planning session that ends without a commit.
 
 ```sh
-python3 tools/push_gate/session_delivery.py plan docs/session-plans/behavior-handoff-gates.json
+python3 tools/push_gate/session_delivery.py plan docs/session-plans/your-feature.json
 ```
 
 Use your own handoff filename when starting a new task.

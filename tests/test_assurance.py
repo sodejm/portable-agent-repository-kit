@@ -54,3 +54,24 @@ class AssuranceTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("context", result.stderr)
             self.assertFalse(project.exists())
+
+    def test_initial_project_commit_passes_handoff(self):
+        """Execute both generated acceptance cases against a project's first commit."""
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "sample"
+            subprocess.run([sys.executable, ROOT / "scripts/create_project.py", project, "--name",
+                            "Sample", "--description", "Sample project", "--license", "mit",
+                            "--init-git"], check=True, capture_output=True)
+            self.assertEqual([p.name for p in (project / "docs/session-plans").iterdir()],
+                             ["project-initialization.json"])
+            empty = subprocess.check_output(["git", "hash-object", "-w", "-t", "tree", "--stdin"],
+                                            cwd=project, input=b"").decode().strip()
+            subprocess.run(["git", "add", "."], cwd=project, check=True)
+            subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=test@example.invalid",
+                            "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null",
+                            "commit", "-qm", "Initialize sample"], cwd=project, check=True)
+            result = subprocess.run([sys.executable, "tools/push_gate/session_delivery.py", "push",
+                                     empty, "HEAD"], cwd=project, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("test_initialized_contract", result.stdout)
+            self.assertIn("test_feature_rejects_invalid_name", result.stdout)

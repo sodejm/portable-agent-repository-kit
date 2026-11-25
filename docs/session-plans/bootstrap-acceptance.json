@@ -1,0 +1,55 @@
+{
+  "stage": "implementation",
+  "request": "Give each generated project a runnable first-commit handoff.",
+  "scope": "Fresh directory and in-place generation, project acceptance tests and handoff guidance.",
+  "setup": "Run from the PARK checkout using Python and Git.",
+  "constraints": "Discard the template history of handoffs and preserve the generated tests.",
+  "steps": [
+    {
+      "action": "Generate and exercise the first commit handoff.",
+      "paths": [
+        "scripts/_template_common.py",
+        "templates/project/initialization.json.in",
+        "templates/project/test_initialized_project.py.in",
+        "tests/test_assurance.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_assurance.py",
+        "expected": "Project generation and first-commit acceptance pass."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "scripts/create_project.py",
+      "given": "A fresh directory is requested.",
+      "when": "Initialize the repository, commit it and run the delivery gate.",
+      "then": "The initialization cases run and pass.",
+      "paths": [
+        "scripts/_template_common.py",
+        "templates/project/initialization.json.in",
+        "templates/project/test_initialized_project.py.in",
+        "tests/test_assurance.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance.py::AssuranceTests::test_initial_project_commit_passes_handoff"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "scripts/create_project.py",
+      "given": "An invalid context is supplied.",
+      "when": "Attempt to generate a project.",
+      "then": "No incomplete project is published.",
+      "paths": [
+        "scripts/_template_common.py",
+        "templates/project/initialization.json.in",
+        "templates/project/test_initialized_project.py.in",
+        "tests/test_assurance.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance.py::AssuranceTests::test_invalid_profile_preserves_destination"
+    }
+  ],
+  "pending": []
+}

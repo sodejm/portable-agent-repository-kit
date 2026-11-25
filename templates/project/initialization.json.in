@@ -1,0 +1,46 @@
+{
+  "stage": "implementation",
+  "request": "Initialize a project with its selected engineering controls.",
+  "scope": "First project snapshot, project profile, specification and team files.",
+  "setup": "Run in the initialized project with Git, make and Python.",
+  "constraints": "Repeated setup must preserve existing project settings.",
+  "steps": [
+    {
+      "action": "Initialize the project and exercise its setup and feature commands.",
+      "paths": [
+        ".park/profile.json"
+      ],
+      "verify": {
+        "command": "make check",
+        "expected": "The project contract and tests pass."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "make init",
+      "given": "The project is initialized.",
+      "when": "Run setup again.",
+      "then": "Settings are preserved and both integrations are available.",
+      "paths": [
+        "tests/test_initialized_project.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_initialized_project.py::InitializedProjectTests::test_initialized_contract"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "make feature",
+      "given": "A feature name contains a parent directory.",
+      "when": "Run the feature command.",
+      "then": "The command rejects the name.",
+      "paths": [
+        "tests/test_initialized_project.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_initialized_project.py::InitializedProjectTests::test_feature_rejects_invalid_name"
+    }
+  ],
+  "pending": []
+}
