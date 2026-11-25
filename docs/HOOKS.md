@@ -17,8 +17,8 @@ If the project uses `pre-commit`:
 pre-commit install
 ```
 
-The checked-in configuration runs `python3 scripts/agent/check.py`. Installing it
-is optional; CI repeats the same contract.
+This installs the quick session handoff check. To enable both commit and push checks,
+follow [Session handoffs](SESSION_HANDOFF.md).
 
 ## Vendor hooks
 

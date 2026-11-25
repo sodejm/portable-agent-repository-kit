@@ -77,6 +77,7 @@ def main():
         run("hadolint", "--failure-threshold", "error", path)
     if stack == "park":
         os.environ["PATH"] = str(Path(python).parent) + os.pathsep + os.environ["PATH"]
+        run(python, "tools/push_gate/session_delivery.py", "push", base, sha)
         run("make", "check")
         run(
             python,
