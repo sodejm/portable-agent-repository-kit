@@ -29,7 +29,7 @@ private payloads and real identifiers must never be copied into this document.
 | Flow | Boundary and effective authority |
 | --- | --- |
 | Source template → copy → destination | Source content becomes a new trusted development surface; destination must be empty and outside source. |
-| Project parameters → token rendering / license → generated repository | Identity substitution affects documents and executable/configuration text. |
+| Project parameters → token rendering / license → generated repository | Identity substitution is limited to the generated project documents and review configuration. |
 | Canonical skills → Claude/other adapters → agent runtime | Copied instructions are capabilities, not merely prose. |
 | Generated repo → future project code / deployment | The future project owner must replace pending architecture and review scope with evidence. |
 | PR/review events → GitHub API → trusted default-branch gate → exact-head check | Untrusted event data only selects a live lookup; the gate has read access plus check-writing authority and must not execute PR content. |
@@ -115,7 +115,7 @@ validation before the affected release/capability expansion and schedule P2 with
 - Attack path / prerequisite: Local configuration or audit output is copied into a public generated project.
 - Inherent impact: High; likelihood: Medium; priority: P1.
 - Existing evidence / limitation: Copy/synchronization excludes *.local.json and churn-v* reports plus known runtime files.
-- Proposed mitigation and validation: Regression-test private sentinels across copy and adapters; review new private artifact patterns and symlink behavior.
+- Proposed mitigation and validation: Git checkouts distribute only tracked regular files. Tests exercise untracked private files and tracked links outside the source. Extracted archives must be pristine because they lack a Git inventory.
 - Residual risk / status: unverified; human review and evidence pending. Retain
   this entry until a reviewer records outcome, exact revision and remaining risk.
 

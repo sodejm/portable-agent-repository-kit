@@ -6,6 +6,7 @@ import datetime as dt
 import os
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 
@@ -51,19 +52,31 @@ def copy_template(source: Path, destination: Path) -> None:
 
     ensure_empty_destination(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    excluded = DISTRIBUTION_IGNORE(str(source), [item.name for item in source.iterdir()])
-    for item in source.iterdir():
-        if item.name in SKIP_NAMES or item.name in excluded:
+    if (source / ".git").exists():
+        inventory = subprocess.run(
+            ["git", "ls-files", "--cached", "-z"], cwd=source, capture_output=True
+        )
+        if inventory.returncode:
+            raise TemplateError("cannot read the template Git inventory")
+        paths = [source / os.fsdecode(item) for item in inventory.stdout.split(b"\0") if item]
+    else:
+        # A source archive has no Git inventory. Use only a pristine distribution.
+        paths = source.rglob("*")
+    for item in paths:
+        relative = item.relative_to(source)
+        if relative.parts[0] in SKIP_NAMES or any(
+            part == ".git" or DISTRIBUTION_IGNORE("", [part]) for part in relative.parts
+        ):
             continue
-        target = destination / item.name
+        if item.resolve() != item or item.is_symlink():
+            raise TemplateError(f"symlink cannot be distributed: {relative}")
         if item.is_dir():
-            shutil.copytree(
-                item,
-                target,
-                ignore=DISTRIBUTION_IGNORE,
-            )
-        else:
-            shutil.copy2(item, target)
+            continue
+        if not item.is_file():
+            raise TemplateError(f"unavailable template file: {relative}")
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, target)
 
 
 def validate_slug(value: str) -> str:
@@ -93,23 +106,13 @@ def validate_owner(value: str | None) -> str | None:
 
 
 def replace_tokens(root: Path, replacements: dict[str, str]) -> None:
-    """Replace literal tokens in UTF-8 files, leaving Git metadata and binary files alone.
-
-    Replacements apply to source as well as documentation and are performed in
-    mapping order. Callers must validate values before invoking this write operation.
-    """
-    for path in root.rglob("*"):
-        if not path.is_file() or ".git" in path.parts:
-            continue
-        try:
-            original = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        rendered = original
-        for token, value in replacements.items():
-            rendered = rendered.replace(token, value)
-        if rendered != original:
-            path.write_text(rendered, encoding="utf-8")
+    """Render only project documents using one literal substitution per token."""
+    pattern = re.compile("|".join(map(re.escape, replacements)))
+    for relative in ("README.md", "docs/THREAT_MODEL.md", "docs/security/REVIEW_COVERAGE.md",
+                     "docs/OWNER_REVIEW_POLICY.md", ".github/review-policy.json"):
+        path = root / relative
+        original = path.read_text(encoding="utf-8")
+        path.write_text(pattern.sub(lambda match: replacements[match[0]], original), encoding="utf-8")
 
 
 def write_license(root: Path, choice: str, copyright_holder: str) -> None:

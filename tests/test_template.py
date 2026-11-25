@@ -45,6 +45,32 @@ class TemplateTests(unittest.TestCase):
                 self.assertFalse((destination / path.relative_to(source)).exists())
                 self.assertEqual(path.read_text(encoding="utf-8"), "synthetic private sentinel\n")
 
+    def test_distribution_uses_git_inventory(self) -> None:
+        """Distribute tracked content without collecting developer files."""
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp) / "src", Path(temp) / "dst"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q", str(source)], check=True)
+            (source / "public.txt").write_text("distributed")
+            (source / "credentials.txt").write_text("private fixture")
+            subprocess.run(["git", "add", "public.txt"], cwd=source, check=True)
+            copy_template(source, output)
+            self.assertEqual([p.name for p in output.iterdir()], ["public.txt"])
+
+    def test_distribution_rejects_tracked_symlink(self) -> None:
+        """Reject a tracked path redirected to a private file."""
+        with tempfile.TemporaryDirectory() as temp:
+            source, output = Path(temp) / "src", Path(temp) / "dst"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q", str(source)], check=True)
+            outside = Path(temp) / "private.txt"
+            outside.write_text("private fixture")
+            (source / "public.txt").symlink_to(outside)
+            subprocess.run(["git", "add", "public.txt"], cwd=source, check=True)
+            with self.assertRaisesRegex(RuntimeError, "symlink"):
+                copy_template(source, output)
+            self.assertFalse((output / "public.txt").exists())
+
     def create(self, destination: Path, license_choice: str = "mit") -> subprocess.CompletedProcess[str]:
         """Generate a synthetic project outside the source tree and return CLI output."""
         create_script = CREATE

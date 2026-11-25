@@ -1,0 +1,49 @@
+{
+  "stage": "implementation",
+  "request": "Keep private workspace files out of new projects.",
+  "scope": "Local template distribution and project document rendering.",
+  "setup": "Run from the PARK checkout using Python and Git.",
+  "constraints": "Do not modify the source while copying a project.",
+  "steps": [
+    {
+      "action": "Restrict Git distribution to tracked regular files and render project documents only.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_template.py -k test_distribution",
+        "expected": "All privacy cases pass."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "copy_template invoked by the creation CLI",
+      "given": "A checkout contains a tracked file alongside a private untracked file.",
+      "when": "Copy a synthetic source checkout.",
+      "then": "Only the tracked file appears in the distribution.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_distribution_uses_git_inventory"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "copy_template invoked by the creation CLI",
+      "given": "A tracked entry links to an external private file.",
+      "when": "Copy a synthetic source checkout.",
+      "then": "The generator rejects the link before copying its contents.",
+      "paths": [
+        "scripts/_template_common.py",
+        "tests/test_template.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_template.py::TemplateTests::test_distribution_rejects_tracked_symlink"
+    }
+  ],
+  "pending": []
+}
