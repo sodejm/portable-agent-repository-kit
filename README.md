@@ -25,7 +25,9 @@ The setup interview asks for a project name, description, languages, workload
 contexts, assurance level, and license. Press Enter at the assurance prompt to
 accept the level suggested for your contexts. Review the generated project
 profile in `.park/profile.json` and constitution in `.specify/memory/constitution.md`,
-then commit the generated files when the checks pass.
+then commit the generated files when the checks pass. Run `make assurance` to scan
+that commit with the latest stable security scanners. See [Project assurance](docs/PROJECT_ASSURANCE.md)
+for scanner setup and the controls each level adds.
 
 From a local PARK checkout, use the same interview to
 [create a project in a separate directory](docs/GETTING_STARTED.md#create-into-a-local-directory).

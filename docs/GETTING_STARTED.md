@@ -7,7 +7,8 @@
 - GNU Make or a compatible `make` implementation for convenience
 - GitHub CLI only if the project will create or inspect GitHub state
 
-PARK's setup and contract checks use only Python's standard library.
+Setup uses Git and Python's standard library. Security scanning also requires the
+tools listed in [Project assurance](PROJECT_ASSURANCE.md).
 
 ## Configure a GitHub template clone
 
@@ -26,7 +27,8 @@ level for that combination. Choose `mit`, `apache-2.0`, or `none` for the licens
 
 Review `.park/profile.json` for your selections and `.specify/memory/constitution.md`
 for the controls they generated. Setup also creates Spec Kit templates and a local
-Squad coordinator. Once the checks pass, commit the generated files. Running
+Squad coordinator. Once the checks pass, commit the generated files and run
+`make assurance` to scan the commit. Running
 `make init` again shows where to find the constitution. See the
 [project assurance guide](PROJECT_ASSURANCE.md) for context and language guidance.
 

@@ -271,6 +271,15 @@ def configure_project(
         "{{DEFAULT_BRANCH}}": default_branch,
     }
     replace_tokens(root, replacements)
+    if profile["assurance"] == "critical":
+        review_path = root / ".github/review-policy.json"
+        review = json.loads(review_path.read_bytes())
+        review["require_independent_review"] = True
+        review_path.write_text(json.dumps(review, indent=2) + "\n", encoding="utf-8")
+        with (root / "docs/OWNER_REVIEW_POLICY.md").open("a", encoding="utf-8") as document:
+            document.write("\nThis critical project requires a qualified reviewer distinct from the PR author, "
+                           "including owner-authored changes. Keep require_independent_review enabled, "
+                           "require a native approval and protect changes to policy and workflows.\n")
     holder = copyright_holder or owner or name
     write_license(root, license_choice, holder)
     # This workflow only works from the source PARK checkout. Generated projects

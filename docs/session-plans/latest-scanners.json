@@ -1,0 +1,152 @@
+{
+  "stage": "implementation",
+  "request": "Use latest stable security scanners for local and hosted validation.",
+  "scope": "Resolve scanner versions and validate each downloaded release artifact.",
+  "setup": "Run from the PARK checkout using Python and Git.",
+  "constraints": "Preserve immutable action references, rule severity and secret scanning.",
+  "steps": [
+    {
+      "action": "Resolve and verify the current scanner releases.",
+      "paths": [
+        "tools/push_gate/scanner_release.py",
+        "tools/push_gate/gate.py",
+        "tools/push_gate/checks.py",
+        "tools/push_gate/install_native_semgrep.py",
+        "tools/push_gate/policy.json",
+        "tools/push_gate/requirements.txt",
+        "scripts/ci/assurance.py",
+        "scripts/ci/install_assurance_tools.sh",
+        "tests/test_scanner_pins.py",
+        "tests/test_local_push_gate.py",
+        "tests/test_native_semgrep_install.py",
+        "tests/test_scanner_reachability.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "verify": {
+        "command": "make check",
+        "expected": "Release resolution, installation, and gate regressions pass."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "success",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "The publisher lists a stable release and matching archive.",
+      "when": "Resolve its Linux artifact.",
+      "then": "The resolver returns its version, official URL and SHA-256.",
+      "paths": [
+        "tools/push_gate/scanner_release.py",
+        "tests/test_scanner_pins.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_scanner_pins.py::ScannerPinTests::test_release_archive_identity"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "The local scanner is older than the selected release.",
+      "when": "Run the local gate.",
+      "then": "Version validation fails before scanning.",
+      "paths": [
+        "tools/push_gate/gate.py",
+        "tests/test_local_push_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_local_push_gate.py::PolicyTests::test_latest_requires_current_native_engine"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "The release feed contains a withdrawn or malformed wheel.",
+      "when": "Select a wheel for the current platform.",
+      "then": "The resolver rejects the artifact.",
+      "paths": [
+        "tools/push_gate/scanner_release.py",
+        "tests/test_scanner_pins.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_scanner_pins.py::ScannerPinTests::test_invalid_wheel_identity"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "A hosted runner starts with an empty tool directory.",
+      "when": "Provision the scanner commands.",
+      "then": "Archive extraction requires a successful digest check.",
+      "paths": [
+        "scripts/ci/install_assurance_tools.sh",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_ci_uses_policy_scanner_version"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "A verified wheel is available.",
+      "when": "Install the native scanner.",
+      "then": "The manifest records the engine identity and excludes the Python wrapper.",
+      "paths": [
+        "tools/push_gate/install_native_semgrep.py",
+        "tests/test_native_semgrep_install.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_native_semgrep_install.py::NativeInstallTests::test_publish_native_identity_manifest_and_no_python"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "A committed assurance profile selects a tier.",
+      "when": "Run assurance for the chosen level.",
+      "then": "Gitleaks version validation precedes history and tree scans for each tier.",
+      "paths": [
+        "scripts/ci/assurance.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_cumulative_checks"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "The project selects its scanner policy.",
+      "when": "Read the configured scanner selectors.",
+      "then": "All three scanners request the latest stable release.",
+      "paths": [
+        "tools/push_gate/policy.json",
+        "tests/test_scanner_pins.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_scanner_pins.py::ScannerPinTests::test_reviewed_scanner_releases_match_installation_guide"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "A package resolver can select an obsolete pip-audit from an unconstrained requirement.",
+      "when": "Resolve pip-audit and its companion tools.",
+      "then": "The requirement accepts pip-audit 2.10.1 and newer stable releases while the companion tools retain their pins.",
+      "paths": [
+        "tools/push_gate/requirements.txt",
+        "tools/push_gate/checks.py",
+        "tests/test_scanner_pins.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_scanner_pins.py::ScannerPinTests::test_validation_dependencies_match_reviewed_releases_and_guide"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Resolve and verify the current scanner releases.",
+      "given": "The local policy selects Semgrep.",
+      "when": "Run the code scanner.",
+      "then": "The gate executes the native engine with the local rules.",
+      "paths": [
+        "tools/push_gate/gate.py",
+        "tests/test_scanner_reachability.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_scanner_reachability.py::ScannerReachabilityTests::test_gate_uses_native_local_scan_without_fallback"
+    }
+  ],
+  "pending": []
+}

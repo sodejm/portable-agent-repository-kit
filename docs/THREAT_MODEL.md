@@ -342,3 +342,13 @@ residual risk acceptance and exact-revision human review remain pending.
 ### Project bootstrap
 
 Setup consumes local project metadata and pinned integration assets. Local creation stages output before publication. In-place initialization requires a fresh checkout and rejects symlinks or existing integration state. The initial coordinator has no network or release authority. Profile edits affect generated project obligations and require policy review.
+
+### Project assurance and release provenance
+
+Project authors control pull request contents, including their proposed policies and tests. PR scanners use read-only repository access on hosted runners. Trusted branch protection and qualified review of workflow and policy changes are deployment prerequisites. Exact-commit tests can still have weak assertions. Review the requested outcome and exercise the real entry point. Scan findings and SBOMs can contain sensitive metadata, so restrict evidence access.
+
+Topic-branch pushes compare the scanned head with its merge base on the default branch. This keeps earlier commits in scope when a later push reruns the handoff's acceptance checks.
+
+The release workflow signs the source archive on a manual default-branch run. Only the attestation job receives OIDC and attestation write permissions. Critical releases check environment protection and require reviewed recovery evidence. Repository administrators own branch rules, designated reviewer configuration, environment protection and mapping product build outputs to signed subjects. Live enforcement and independent human review require evidence from the deployed repository.
+
+Scanner provisioning trusts GitHub release metadata for Gitleaks and Trivy and PyPI for Semgrep. The installer selects the platform asset by name and verifies its advertised SHA-256 before extraction. The publisher or release service could replace both the asset and digest. A new stable release can change scanner behavior, and an outage can block validation. The maintainer owns investigation of these failures. The read-only hosted assurance job exercises the concrete tools and records their versions. The local validation environment resolves pip-audit through its Python package index. A lower bound of 2.10.1 excludes the obsolete 2.6.1 dependency graph observed in hosted scanning and allows future releases. Qualified human review of these trust assumptions is pending.

@@ -445,8 +445,25 @@ def native_scanner(env):
     )
 
 
+def required_version(tool, policy, snapshot, env):
+    """Resolve the trusted selector to the stable upstream version at check time."""
+    selector = policy["tools"][tool]
+    if selector == "latest":
+        resolver = Path(__file__).with_name("scanner_release.py")
+        return (
+            run(
+                [sys.executable, "-I", "-S", str(resolver), tool, "version"],
+                snapshot,
+                env=env,
+            )
+            .decode()
+            .strip()
+        )
+    return selector
+
+
 def scanners(snapshot, files, policy, env, temporary):
-    """Run pinned scanners with local rules and no repository suppression files."""
+    """Run the selected scanners with local rules and no repository suppression files."""
     # macOS may resolve case aliases to the same native ignore basename.
     if any(
         part.casefold() == SEMGREP_IGNORE for name in files for part in Path(name).parts
@@ -455,19 +472,16 @@ def scanners(snapshot, files, policy, env, temporary):
     # The raw engine probe cannot dispatch to the Python CLI, unlike --version
     # through osemgrep. Require an exact version, not a substring in wrapper prose.
     native_version = run(["semgrep-core", "-version"], snapshot, env=env).strip()
-    version = re.escape(policy["tools"]["semgrep"].encode())
+    selected = required_version("semgrep", policy, snapshot, env)
+    version = re.escape(selected.encode())
     if not re.fullmatch(
         rb"semgrep-core version: " + version + rb" \([0-9a-f]{10}\)", native_version
     ):
-        raise GateError(
-            "Required native Semgrep version: " + policy["tools"]["semgrep"]
-        )
-    for tool in ("trivy",):
-        output = run([tool, "--version"], snapshot, env=env).decode()
-        if not re.search(
-            r"(?<![\d.])" + re.escape(policy["tools"][tool]) + r"(?![\d.])", output
-        ):
-            raise GateError(f"Required {tool} version: {policy['tools'][tool]}")
+        raise GateError("Required native Semgrep version: " + selected)
+    selected = required_version("trivy", policy, snapshot, env)
+    output = run(["trivy", "--version"], snapshot, env=env).decode()
+    if not re.search(r"(?m)^(?:Version: )?" + re.escape(selected) + r"$", output):
+        raise GateError(f"Required trivy version: {selected}")
     for name in files:
         data = (snapshot / name).read_bytes()
         if re.search(rb"(?m)^\s*(?:#|//|/\*)\s*trivy:\s*ignore", data):

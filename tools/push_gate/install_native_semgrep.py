@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-"""Install only the pinned wheel's native engine and linked bundled libraries.
+"""Install only the latest stable Semgrep wheel's native engine and linked libraries.
 
-This offline, standard-library installer never installs/imports wheel Python code
-or resolves dependencies. The operator supplies an official wheel and a new
-destination in a trusted parent directory. A digest mismatch fails before ZIP
-parsing; extraction is bounded and manual, never ZipFile.extract/all.
+Verify the official PyPI digest before parsing any wheel members.
 """
 
 from __future__ import annotations
@@ -15,6 +12,7 @@ import io
 import json
 import os
 import platform
+import re
 import stat
 import struct
 import subprocess
@@ -23,12 +21,6 @@ import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 
-VERSION = "1.187.0"
-WHEELS = {
-    "macos-arm64": "a44a8f486719e69fe38c451c70b4808bed5532bbcb4c25a8dd04a74617dfcca0",
-    "linux-aarch64": "79f0a3dc63607fada4ae2225599ab5eef8005124a8484814184df72805afcfc0",
-    "linux-x86_64": "ad160ed527bd153b96616814366a6d17f451d37babf75df6705327aede0cc8bd",
-}
 ENGINE = "semgrep/bin/semgrep-core"
 MAX_WHEEL = 256 * 1024 * 1024
 MAX_PAYLOAD = 512 * 1024 * 1024
@@ -159,7 +151,7 @@ def dependencies(data, target):
     return names
 
 
-def native_payload(wheel, digest, target):
+def native_payload(wheel, digest, target, version):
     """Verify bytes and return only the engine and its bundled dependency closure.
 
     All ZIP names/types are preflighted, including discarded members. Linked
@@ -192,7 +184,7 @@ def native_payload(wheel, digest, target):
                 or info.flag_bits & 1
             ):
                 raise InstallError("Unsafe or duplicate wheel member")
-            installed_name = name.removeprefix(f"semgrep-{VERSION}.data/purelib/")
+            installed_name = name.removeprefix(f"semgrep-{version}.data/purelib/")
             if installed_name in entries:
                 raise InstallError("Duplicate wheel installation path")
             entries[installed_name] = info
@@ -232,14 +224,14 @@ def native_payload(wheel, digest, target):
         return payload
 
 
-def install(wheel, destination):
+def install(wheel, destination, version, digest):
     """Publish a new native-only directory after verifying the raw engine version.
 
     Refuse existing destinations. Staging stays in the destination's trusted
     parent and is removed on failure. The installer never changes PATH or hooks.
     """
     target = host_platform()
-    payload = native_payload(wheel, WHEELS[target], target)
+    payload = native_payload(wheel, digest, target, version)
     if destination.exists() or destination.is_symlink():
         raise InstallError("Destination already exists; choose a new directory")
     with tempfile.TemporaryDirectory(
@@ -264,16 +256,17 @@ def install(wheel, destination):
             timeout=30,
             check=False,
         )
-        if (
-            result.returncode
-            or result.stdout.strip()
-            != f"semgrep-core version: {VERSION} (a5341ae595)".encode()
+        if result.returncode or not re.fullmatch(
+            rb"semgrep-core version: "
+            + re.escape(version.encode())
+            + rb" \([0-9a-f]{10}\)",
+            result.stdout.strip(),
         ):
             raise InstallError("Native engine version verification failed")
         manifest = {
-            "version": VERSION,
+            "version": version,
             "platform": target,
-            "wheel_sha256": WHEELS[target],
+            "wheel_sha256": digest,
             "files": {
                 name: hashlib.sha256(body).hexdigest()
                 for name, body in sorted(payload.items())
@@ -287,17 +280,45 @@ def install(wheel, destination):
 
 
 def main():
-    """Accept local inputs only and emit sanitized success/failure diagnostics."""
+    """Download the latest wheel or verify a supplied copy against the same release."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("wheel", type=Path)
+    parser.add_argument("wheel", help="latest or a local copy of the current wheel")
     parser.add_argument("destination", type=Path)
     args = parser.parse_args()
     try:
-        install(args.wheel, args.destination.absolute())
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import scanner_release
+
+        release = scanner_release.artifact(
+            "semgrep", scanner_release.metadata("semgrep"), host_platform()
+        )
+        with tempfile.TemporaryDirectory() as work:
+            wheel = Path(args.wheel)
+            if args.wheel == "latest":
+                wheel = Path(work) / "semgrep.whl"
+                subprocess.run(
+                    [
+                        *scanner_release.CURL,
+                        "--max-filesize",
+                        str(MAX_WHEEL),
+                        "--output",
+                        str(wheel),
+                        release["url"],
+                    ],
+                    check=True,
+                )
+            install(
+                wheel,
+                args.destination.absolute(),
+                release["version"],
+                release["sha256"],
+            )
     except (
         InstallError,
         OSError,
         ValueError,
+        KeyError,
+        TypeError,
         struct.error,
         zipfile.BadZipFile,
         subprocess.SubprocessError,
@@ -310,7 +331,9 @@ def main():
         return 1
     print(
         "Installed native Semgrep "
-        + VERSION
+        + release["version"]
+        + " SHA-256 "
+        + release["sha256"]
         + "; no Python dependency packages installed"
     )
     return 0

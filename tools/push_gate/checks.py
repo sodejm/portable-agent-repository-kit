@@ -29,6 +29,8 @@ def main():
         "install",
         "--python",
         python,
+        "--refresh-package",
+        "pip-audit",
         "-r",
         "tools/push_gate/requirements.txt",
     )

@@ -28,7 +28,7 @@ class ScannerReachabilityTests(unittest.TestCase):
 
     def scanner_commands(self, directory: Path, files=None) -> list[list[str]]:
         """Capture the actual argv builder without launching scanners or version probes."""
-        policy = json.loads((ROOT / "tools/push_gate/policy.json").read_text())
+        policy = {"tools": {"semgrep": "9.8.7", "trivy": "1.2.3"}}
         commands = []
 
         def capture(argv, *args):
@@ -193,10 +193,8 @@ class ScannerReachabilityTests(unittest.TestCase):
         version = subprocess.run(
             [core, "-version"], env=environment, capture_output=True, timeout=30
         )
-        self.assertEqual(
-            (version.returncode, version.stdout.strip()),
-            (0, b"semgrep-core version: 1.187.0 (a5341ae595)"),
-        )
+        self.assertEqual(version.returncode, 0)
+        self.assertRegex(version.stdout.strip(), rb"^semgrep-core version: \d+\.\d+\.\d+ \([a-f0-9]{10}\)$")
         with tempfile.TemporaryDirectory(prefix="park-native-scan-") as temporary:
             directory = Path(temporary)
             controls = {

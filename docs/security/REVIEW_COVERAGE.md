@@ -48,3 +48,13 @@ The source-check scope also includes `scripts/agent/check_code_documentation.py`
 regressions and `make check` integration. Review exact-content legacy exemptions,
 parser coverage, path/input rejection and diagnostics privacy. All human review
 remains pending; the baseline is documentation debt, not an approval record.
+
+## Project initialization and assurance
+
+Before the first affected release, the designated security reviewer should review
+the following additions at the proposed commit under R1, R2, R3 and R-CI.
+Qualified human review and hosted activation evidence are pending.
+
+- Inspect the tracked-file inventory in `scripts/_template_common.py`, the interview and constitution in `scripts/project_profile.py`, and the first-commit cases generated from `templates/project/`.
+- Check the upstream versions and licenses of the Spec Kit templates and Squad casting assets under `templates/integrations/`. Their source references are in [Project assurance](../PROJECT_ASSURANCE.md).
+- Review `.github/workflows/assurance.yml`, `scripts/ci/assurance.py`, `scripts/ci/install_assurance_tools.sh` and the independent-review path in `scripts/ci/review_gate.py`. Confirm branch protection, source provenance verification and critical release approvals in the hosting environment.

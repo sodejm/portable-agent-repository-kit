@@ -152,6 +152,7 @@ class TemplateTests(unittest.TestCase):
             result = subprocess.run(["make", "init"], cwd=root, input=answers,
                                     text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Run `make assurance` after committing", result.stdout)
             profile = root / ".park/profile.json"
             self.assertEqual(json.loads(profile.read_bytes()), {
                 "version": 1, "languages": ["python", "go"],
@@ -168,6 +169,7 @@ class TemplateTests(unittest.TestCase):
             repeat = subprocess.run(["make", "init"], cwd=root, input="", text=True, capture_output=True)
             self.assertEqual(repeat.returncode, 0, repeat.stderr)
             self.assertIn("Project initialized", repeat.stdout)
+            self.assertIn("make assurance to scan the current commit", repeat.stdout)
             self.assertEqual(profile.read_bytes(), profile_bytes)
 
     def test_make_init_requires_complete_answers(self) -> None:
@@ -187,6 +189,7 @@ class TemplateTests(unittest.TestCase):
                                             text=True, capture_output=True)
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn(message, result.stderr)
+                    self.assertNotIn("after committing", result.stdout)
                     self.assertTrue((root / ".portable-agent-template").is_file())
                     self.assertFalse((root / ".park").exists())
                     for path in ("README.md", "LICENSE"):

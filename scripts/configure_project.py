@@ -31,6 +31,7 @@ def main() -> int:
         return 2
     print(f"Configured {settings['name']} at {display_path(root)}")
     print("Next: review the generated files, run `make check`, and commit the result.")
+    print("Run `make assurance` after committing to scan the generated project.")
     return 0
 
 

@@ -1,0 +1,130 @@
+{
+  "stage": "implementation",
+  "request": "Enforce cumulative project assurance in CI and protect release provenance.",
+  "scope": "Security scans, release evidence and independent approval.",
+  "setup": "Run from the PARK checkout using Python and Git.",
+  "constraints": "Keep scanning read-only and scope signed release evidence to the default branch.",
+  "steps": [
+    {
+      "action": "Run tier-dependent checks and verify release prerequisites.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        ".github/workflows/repository-contract.yml",
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/ci/assurance.py",
+        "scripts/ci/install_assurance_tools.sh",
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_assurance_gate.py",
+        "expected": "All assurance cases pass."
+      }
+    },
+    {
+      "action": "Evaluate owner review for branch pushes associated with a pull request.",
+      "paths": [
+        "scripts/ci/review_gate.py",
+        "tests/test_review_gate_push.py"
+      ],
+      "verify": {
+        "command": "python3 -m unittest discover -s tests -p test_review_gate_push.py",
+        "expected": "The associated PR and pushed commit reach the existing review policy."
+      }
+    }
+  ],
+  "acceptance": [
+    {
+      "kind": "boundary",
+      "entrypoint": "Evaluate owner review for branch pushes associated with a pull request.",
+      "given": "Repository contract completed for a branch push with an associated PR.",
+      "when": "The trusted gate resolves the workflow and evaluates review state.",
+      "then": "It checks the pushed commit against the live PR head and enforces the review policy. Ambiguous associations and missing commit IDs fail.",
+      "paths": [
+        "scripts/ci/review_gate.py",
+        "tests/test_review_gate_push.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_review_gate_push.py::PushReviewTests::test_associated_push_requires_live_pr_and_matching_head"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Run tier-dependent checks and verify release prerequisites.",
+      "given": "The profile enables additional controls.",
+      "when": "Run its assurance checks with synthetic scanner commands.",
+      "then": "Each required check runs for the selected tier.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        ".github/workflows/repository-contract.yml",
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/ci/assurance.py",
+        "scripts/ci/install_assurance_tools.sh",
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_cumulative_checks"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Run tier-dependent checks and verify release prerequisites.",
+      "given": "A required scanner fails or recovery evidence is stale.",
+      "when": "Run assurance and release validation.",
+      "then": "The affected operation fails closed.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        ".github/workflows/repository-contract.yml",
+        "Makefile",
+        "scripts/_template_common.py",
+        "scripts/ci/assurance.py",
+        "scripts/ci/install_assurance_tools.sh",
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_failed_evidence"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Run tier-dependent checks and verify release prerequisites.",
+      "given": "A critical project owner authors a pull request.",
+      "when": "Evaluate the trusted review policy.",
+      "then": "Approval from a distinct configured reviewer is required.",
+      "paths": [
+        "scripts/ci/review_gate.py",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_critical_owner_needs_separate_reviewer"
+    },
+    {
+      "kind": "boundary",
+      "entrypoint": "Verify accepted behavior in the hosted assurance job.",
+      "given": "A topic branch already contains commits covered by its handoff.",
+      "when": "Push another commit to the topic branch.",
+      "then": "Validate the complete change since the branch diverged. Default-branch updates still use the previous tip.",
+      "paths": [
+        ".github/workflows/assurance.yml",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_hosted_acceptance_range"
+    },
+    {
+      "kind": "success",
+      "entrypoint": "Provision security scanners in the hosted job.",
+      "given": "The policy selects the latest stable native Semgrep release.",
+      "when": "Run the hosted installer against a controlled provider.",
+      "then": "The installer passes the latest selector to the wheel resolver and stops before extracting an archive that fails verification.",
+      "paths": [
+        "scripts/ci/install_assurance_tools.sh",
+        "tests/test_assurance_gate.py"
+      ],
+      "runner": "unittest",
+      "test": "tests/test_assurance_gate.py::AssuranceGateTests::test_ci_uses_policy_scanner_version"
+    }
+  ],
+  "pending": []
+}
