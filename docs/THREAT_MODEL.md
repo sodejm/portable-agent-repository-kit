@@ -84,6 +84,11 @@ account and credential recipient rather than only their user-supplied labels.
   `.github/workflows/review-event-notification.yml`, and
   `scripts/ci/review_gate.py`: owner-review trust boundary introduced after the
   baseline; tests are implementation evidence, not hosted-enforcement evidence.
+- `.github/workflows/codeql.yml`: scheduled and pull-request CodeQL extended
+  analysis for Python and GitHub Actions workflows. Its pinned action revision,
+  read-only repository access and `security-events: write` upload permission
+  constrain supply-chain and token exposure, but query results are detection
+  evidence rather than proof of absence of vulnerabilities.
 
 ## Threat register and prioritization
 
